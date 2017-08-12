@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}一键部署{% endblock %}
+
+{% block content_title %}部署{% endblock %}
+
+{% block content %}
+<div class="margin">
+	<h4 style="font-weight:bold;">添加任务：</h4>
+	<form action="/onekey/" method="post" >
+	{% csrf_token %}
+		任务描述:&nbsp;
+		<input type="text" id="task" name="task" onblur="chkduplicate()" required/>
+		&nbsp;
+		<span id="chkduplicate" style="color:red; display:none">任务描述已存在</span>
+
+		选择组别:&nbsp;
+		<select id="group" name="group" required>
+				<option></option>
+			{% for group in groups %}
+		  		<option value="{{ group }}">{{ group }}</option> 
+			{% endfor %}
+		</select>
+
+        <br>
+        程序类型:&nbsp;
+		<select id="type" name="type" required>
+				<option></option>
+		  		<option value="single">单独程序</option>
+                <option value="multipule">多个程序</option>
+		</select>
+
+        &nbsp;
+	    项目文件:&nbsp;
+	    <input type="text" id="file" name="file" placeholder="如 /mnt/upload/ROOT.war" required/>
+<!-- 	<input type="file" id="file" name="file" /> -->
+	
+	&nbsp;&nbsp;&nbsp;&nbsp;
+	<input type="reset" value="重置" />
+	&nbsp;&nbsp;&nbsp;&nbsp;
+	<input id="submit" type="submit" onclick="return taskadd()" value="添加"/>
+	</form>
+
+</div>
+	<hr />
+
+<div class="margin">
+	<h4 style="font-weight:bold;">部署任务：</h4>
+</div>
+<table class="table">
+<!--   <caption>上下文表格布局</caption> -->
+  <thead>
+    <tr>
+      <th></th>
+      <th>任务描述</th>
+      <th>任务组别</th>
+      <th>程序类型</th>
+      <th>项目名称</th>
+      <th>状态</th>
+      <th>日志</th>
+    </tr>
+  </thead>
+  <tbody id="add">
+<!-- active, success, warning, danger,  -->
+    <tr id="state" class="warning">
+      <td>
+      <button type="button" class="close" onclick="javascript:$(this).parent().parent().remove()">×</button>
+      </td>
+      <td>产品1</td>
+      <td>23/11/2013</td>
+      <td>单个程序</td>
+      <td>项目</td>
+      <td>待发货</td>
+      <td><a href="#myModal" class="btn-link" data-toggle="modal" onclick="return getcmd2(this)">查看</a></td>
+      <td><button class="chkrun" id="0" onclick="return runcmd2(this)">部署</button></td>
+    </tr>
+    
+    {% for each in queryset %}
+    <tr id="state" class="{{ each.run_status }}">
+      <td>
+      <button type="button" class="close" onclick="deltask(this)">×</button>
+      </td>
+      <td>{{ each.name }}</td>
+      <td>{{ each.group }}</td>
+      <td>{{ each.type }}</td>
+      <td>{{ each.file }}</td>
+      <td>{{ each.task_status }}</td>
+      <td><a href="#myModal" class="btn-link" data-toggle="modal" onclick="return getcmd2(this)">查看</a></td>
+      <td><button class="chkrun" {{ each.button_status }} id="0" onclick="return runcmd2(this)">部署</button></td>
+    </tr>
+	{% endfor %}
+	
+  </tbody>
+</table>
+</div>
+
+<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel">Modal header</h3>
+  </div>
+  <div class="modal-body">
+    <p id="myModalBody">One fine body…</p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">关闭</button>
+  </div>
+</div>
+
+
+
+<!-- 进度条 -->
+<!-- <div class="progress"> -->
+<!--   <div class="bar" style="width: {{ persentage }}%;"></div> -->
+<!-- </div> -->
+
+<!-- {% include 'result.html' %} -->
+
+{% endblock %}

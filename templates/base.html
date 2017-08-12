@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9"> <![endif]-->
+<!--[if !IE]><!-->
+<html lang="en">
+<!--<![endif]-->
+<!-- BEGIN HEAD -->
+
+<head>
+    <meta charset="utf-8" />
+    <title>{% block title %}ansible平台{% endblock %}</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="" name="description" />
+    <meta content="" name="author" />
+    <!-- BEGIN GLOBAL MANDATORY STYLES -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/bootstrap-responsive.min.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/style-metro.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/style-responsive.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/default.css" rel="stylesheet" type="text/css" id="style_color" />
+    <link href="/static/css/uniform.default.css" rel="stylesheet" type="text/css" />
+	<!-- mask alert -->
+    <!-- mask alert -->
+    <!-- END GLOBAL MANDATORY STYLES -->
+    <link rel="shortcut icon" href="/static/image/favicon.png" />
+    <!-- END COPYRIGHT -->
+    <!-- BEGIN JAVASCRIPTS(Load javascripts at bottom, this will reduce page load time) -->
+    <!-- BEGIN CORE PLUGINS -->
+    <script src="/static/js/jquery-1.10.1.min.js" type="text/javascript"></script>
+    <script src="/static/js/jquery-migrate-1.2.1.min.js" type="text/javascript"></script>
+    <!-- IMPORTANT! Load jquery-ui-1.10.1.custom.min.js before bootstrap.min.js to fix bootstrap tooltip conflict with jquery ui tooltip -->
+    <script src="/static/js/jquery-ui-1.10.1.custom.min.js" type="text/javascript"></script>
+    <script src="/static/js/jquery.cookie.min.js" type="text/javascript"></script>
+    <script src="/static/js/bootstrap.min.js" type="text/javascript"></script>
+    <!--[if lt IE 9]>
+
+    <script src="/static/js/excanvas.min.js"></script>
+
+    <script src="/static/js/respond.min.js"></script>  
+
+    <![endif]-->
+
+    <!-- END CORE PLUGINS -->
+    <!-- BEGIN PAGE LEVEL PLUGINS -->
+
+    <!-- END PAGE LEVEL PLUGINS -->
+    <!-- BEGIN PAGE LEVEL SCRIPTS -->
+    <script src="/static/js/app.js" type="text/javascript"></script>
+    <!-- END PAGE LEVEL SCRIPTS -->
+    <script src="/static/js/bootstrap-modal.js" type="text/javascript"></script>
+    <script src="/static/js/bootstrap-modalmanager.js" type="text/javascript"></script>
+    <script src="/static/js/ui-modals.js"></script>
+</head>
+<!-- END HEAD -->
+
+<!-- BEGIN BODY -->
+<style>
+.setbg input[type="text"],
+.setcol .yu_bgcol {
+    background-color: initial!important;
+}
+</style>
+
+<body class="page-header-fixed">
+    <!-- BEGIN HEADER -->
+    <div class="header navbar navbar-inverse navbar-fixed-top">
+        <!-- BEGIN TOP NAVIGATION BAR -->
+        <div class="navbar-inner">
+            <div class="container-fluid">
+                <!-- BEGIN LOGO -->
+                <a class="brand" href="/dashbord/">
+                    <img src="/static/image/logo.png" alt="logo" />
+                </a>
+                <!-- END LOGO -->
+                <!-- BEGIN RESPONSIVE MENU TOGGLER -->
+                <a href="javascript:;" class="btn-navbar collapsed" data-toggle="collapse" data-target=".nav-collapse">
+                    <img src="/static/image/menu-toggler.png" alt="" />
+                </a>
+                <!-- END RESPONSIVE MENU TOGGLER -->
+                <!-- BEGIN TOP NAVIGATION MENU -->
+                
+                <ul class="nav pull-right">
+                <p style="color:white; font-size:16px; margin-top: 10px;">欢迎 {{ user }}, <a style="color:white; font-size:16px;" href="/logout/">注销</a></p>
+                </ul>
+                
+                <!-- END TOP NAVIGATION MENU -->
+            </div>
+        </div>
+        <!-- END TOP NAVIGATION BAR -->
+    </div>
+    <!-- End HEADER -->
+    <!-- BEGIN CONTAINER -->
+    <div class="page-container row-fluid">
+        <!-- BEGIN SIDEBAR -->
+        <div class="page-sidebar nav-collapse collapse">
+            <!-- Begin SIDEBAR MENU -->
+            <!-- BEGIN SIDEBAR MENU -->
+            <ul class="page-sidebar-menu">
+                <li>
+                    <!-- BEGIN SIDEBAR TOGGLER BUTTON -->
+                    <div class="sidebar-toggler hidden-phone"></div>
+                    <!-- BEGIN SIDEBAR TOGGLER BUTTON -->
+                </li>
+				<li>
+                    <a href="/">
+                        <i class="icon-inbox"></i>
+                        <span class="title">资产管理</span>
+                    </a>
+                </li>
+				<li>
+                    <a href="/crontab/">
+                        <i class="icon-time"></i>
+                        <span class="title">主机管理</span>
+                    </a>
+                </li>
+				<li>
+                    <a href="/admin/">
+                        <i class="icon-wrench"></i>
+                        <span class="title">后台</span>
+						{% if request.user.username == 'guanwang' %}
+                        <span class="title">admin</span>
+						{% endif %}
+                    </a>
+                </li>
+
+            <!-- END SIDEBAR MENU -->
+        </div>
+        <!-- END SIDEBAR -->
+        <!-- BEGIN PAGE -->
+        <div class="page-content">            
+            <div class="container-fluid">
+                <!-- BEGIN PAGE HEADER-->
+                <div class="row-fluid">
+                    <div class="span12">
+                        <!-- BEGIN PAGE TITLE & BREADCRUMB-->
+                        <h3 class="page-title">
+							{% block content_title %}
+							ansible平台
+							{% endblock %}
+							<small></small>
+                        </h3>
+                        <!-- END PAGE TITLE & BREADCRUMB-->
+                    </div>
+                </div>
+                <!-- END PAGE HEADER-->
+                <!-- Begin result-->
+                <div>
+					{% block content %}{% endblock %}
+				</div>
+                <!-- END result-->
+            </div>
+            <!-- END PAGE CONTAINER-->
+        </div>
+        <!-- end PAGE -->
+        <!-- **** -->
+        <!-- **** -->
+    </div>
+    <!-- END CONTAINER -->
+    <script>
+    jQuery(document).ready(function() {
+        App.init();
+        UIModals.init();
+        // var swiper = new Swiper('.swiper-container');
+        $('.datainfo .span12,.loading').hide();
+    });
+
+    function keepdomafter() {
+        play();
+
+        $('.loading').hide();
+        $('.ui-resizable-se').nextAll().remove();
+        var swiper = new Swiper('.swiper-container', {
+            // pagination: '.swiper-pagination',
+            // paginationClickable: true,
+            // nextButton: '.swiper-button-next',
+            // prevButton: '.swiper-button-prev',
+            // spaceBetween: 30,
+            // effect: 'fade',
+            // grabCursor: true,
+            // autoplay: 2000,
+        });
+    }
+
+	//crontab切换动作
+    function content(){
+		var a=document.getElementById("action").value;
+		if (a=="delete"){
+			b=document.getElementById("content");
+			b.setAttribute("hidden", true);
+		}
+		else{
+			b=document.getElementById("content");
+			b.removeAttribute("hidden", true);
+		}
+	}
+	
+	//检查input是否为空：file copy shell service software crontab
+	function file(){
+			if (document.getElementById("dest").value==""){
+					alert("请输入目标对象！")
+					return false;
+			}
+			return true;
+	}
+
+	function copy(){
+			if (document.getElementById("file").value==""){
+					alert("请上传文件！")
+					return false;
+			}
+			if (document.getElementById("dest").value==""){
+					alert("请输入目标路径！")
+					return false;
+			}
+			return true;
+	}
+
+	function shell(){
+			if (document.getElementById("cmd").value==""){
+					alert("请输入命令内容！")
+					return false;
+			}
+			return true;
+	}
+
+	function service(){
+			if (document.getElementById("name").value==""){
+					alert("请输入服务名称！")
+					return false;
+			}
+			return true;
+	}
+
+	function software(){
+			if (document.getElementById("name").value==""){
+					alert("请输入软件名称！")
+					return false;
+			}
+			return true;
+	}
+
+	function crontab(){
+			if (document.getElementById("name").value==""){
+					alert("请输入任务名称！")
+					return false;
+			}
+			return true;
+	}
+	
+	//一键部署 检查输入是否为空
+// 	function submitit(){
+// 		if(document.getElementById("task").value==""){
+// 			alert("请输入任务描述！")
+// 			return false;
+// 		}
+// 		else if(document.getElementById("file").value==""){
+// 			alert("请上传文件!")
+// 			return false;
+// 		}
+// 	}
+
+	//点击按钮添加选择的功能
+// 	function additem(){
+// 		if(document.getElementById("additem").value=="file"){
+// 			$(".add").append('<div id="id1" class="margin">目标文件:&nbsp;<input type="text" id="id1" name="id1">&nbsp;&nbsp;动作:&nbsp;<select name="id2"><option value="touch">新建文件</option><option value="directory">新建目录</option><option value="absent">删除文件/目录</option><option value="modify">修改属性</option></select>&nbsp;&nbsp;参数:&nbsp;<input type="text" name="id3" placeholder="如：owner=root mode=755"><a onclick="javascript:$(this).parent().remove()">&nbsp;&nbsp;删除</a></div>');
+// 		}
+// 		else if(document.getElementById("additem").value=="copy"){
+// 			$(".add").append('<div class="margin">文件:&nbsp;<input type="file" id="file" name="copy" />&nbsp;&nbsp;目标路径:&nbsp;<input type="text" id="dest" name="copy"><a onclick="javascript:$(this).parent().remove()">&nbsp;&nbsp;删除</a></div>');
+// 		}
+// 		else if(document.getElementById("additem").value=="service"){
+// 			$(".add").append('<div class="margin">服务名称:&nbsp;<input type="text" id="name" name="service" placeholder="">&nbsp;&nbsp;动作:&nbsp;<select name="service"><option value="started">启动</option> <option value="stoped">停止</option> </select>&nbsp;&nbsp;进程名称:&nbsp;<input type="text" name="service" placeholder="如：/usr/bin/java"><a onclick="javascript:$(this).parent().remove()">&nbsp;&nbsp;删除</a></div>');
+// 		}
+// 		else if(document.getElementById("additem").value=="software"){
+// 			$(".add").append('<div class="margin">服务名称:&nbsp;<input type="text" id="name" name="software" placeholder="">&nbsp;&nbsp;动作:&nbsp;<select name="software"><option value="started">启动</option> <option value="stoped">停止</option> </select>&nbsp;&nbsp;进程名称:&nbsp;<input type="text" name="software" placeholder="如：/usr/bin/java"><a onclick="javascript:$(this).parent().remove()">&nbsp;&nbsp;删除</a></div>');
+// 		}
+// 	}
+
+	//添加任务
+	function taskadd(){		
+		var task=document.getElementById("task").value
+		var group=document.getElementById("group").value
+		var file=document.getElementById("file").value
+		
+		if(task==""){
+			alert("请输入任务描述！")
+			return false;
+		}
+		else if(group==""){
+			alert("请选择组别!")
+			return false;
+		}
+		else if(file==""){
+			alert("请输入项目文件!")
+			return false;
+		}
+// 		else{
+// 			$("#add").append('<tr class="active"><td><button type="button" class="close" onclick="javascript:$(this).parent().parent().remove()">×</button></td><td>'+task+'</td><td>'+group+'</td><td>'+file+'</td><td class="active" id="status">待部署</td><td><a href="#myModal" class="btn-link" data-toggle="modal" onclick="return getcmd2(this)">查看</a></td><td><button class="chkrun" id="0" onclick="return runcmd2(this)">部署</button></td></tr>')
+// 		}
+ 	}
+
+	
+	
+	function runcmd2(that){
+		var task=$(that).parent().prev().prev().prev().prev().prev().text()	//任务描述
+		var group=$(that).parent().prev().prev().prev().prev().text()	//任务组别
+		var file=$(that).parent().prev().prev().prev().text()	//项目文件
+		var id=$(that).attr("id")	//检查是否重复部署
+		console.log(task,group,file,id)
+// 		var status=document.getElementById("status").innerText
+// 		var url="/runcmd/"+"{{ request.user.username }}"+"/"
+// 		console.log(url)
+		//查询结果
+		
+		if(id=="0"){
+		$.ajax({
+			url: "/runcmd/",
+//			url: url,
+			type: "post",
+			data: {"task":task, "group":group, "file":file},
+			headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+			success: function(status){
+ 				if(status=="ok"){
+ 					console.log(status);
+					alert("开始部署！");
+ 					$(that).parent().prev().prev().text("已部署");	//更改部署状态
+ 					$(that).parent().parent().attr("class","success");
+//					document.getElementById("status").innerText="已部署";	//更改部署状态
+//					$(".alert").show();
+ 				}
+ 				else{
+ 					alert("部署失败!")
+ 				}
+			}
+		})
+		if($(that).text()=="已部署"){
+			console.log($(that).text())
+			$(that).attr("disabled",false);
+		}
+		else{
+			$(that).attr("disabled",true);
+		}
+//		$(".chkrun").attr("id","1");	//部署后状态改为1
+// 		$(".log").attr("href", url);	//日志路径
+		}
+		else{
+			alert("请勿重复部署！")
+		}
+	}
+	
+	
+	
+	//执行任务	
+	function runcmd(){
+		var task=document.getElementById("task").value
+		var group=document.getElementById("group").value
+		var file=document.getElementById("file").value
+		var id=$(".chkrun").attr("id")	//检查是否重复部署
+// 		var status=document.getElementById("status").innerText
+// 		var url="/runcmd/"+"{{ request.user.username }}"+"/"
+// 		console.log(url)
+		//查询结果
+		
+		if(id=="0"){
+		$.ajax({
+			url: "/runcmd/",
+//			url: url,
+			type: "post",
+			data: {"task":task, "group":group, "file":file},
+			headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+			success: function(status){
+ 				if(status=="ok"){
+ 					console.log(status);
+					alert("开始部署！");
+					document.getElementById("status").innerText="已部署";	//更改部署状态
+//					$(".alert").show();
+ 				}
+ 				else{
+ 					alert("部署失败!")
+ 				}
+			}
+		})
+		$(".chkrun").attr("id","1");	//部署后状态改为1
+// 		$(".log").attr("href", url);	//日志路径
+		}
+		else{
+			alert("请勿重复部署！")
+		}
+	}
+
+	
+	//获取命令执行结果
+	function getcmd2(that){
+		var task=$(that).parent().prev().prev().prev().prev().text();	//任务描述
+		console.log(task);
+		var url="/getcmd/"+task+"/"
+		
+		document.getElementById("myModalLabel").innerText=task;
+		$.ajax({
+			url: url,
+			type: "post",
+			headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+ 			success:function(result){
+				console.log(result);
+				document.getElementById("myModalBody").innerText=result;
+ 			}
+		});		
+	}
+	
+	
+	//获取命令执行结果
+	function getcmd(){
+		var task=document.getElementById("task").value;
+		var url="/getcmd/"+task+"/"
+		
+		document.getElementById("myModalLabel").innerText=task;
+		$.ajax({
+			url: url,
+			type: "post",
+			headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+ 			success:function(result){
+				console.log(result);
+				document.getElementById("myModalBody").innerText=result;
+ 			}
+		});		
+	}
+	
+	//删除主机
+	function delhost(that){
+ 		var auth_user=$(that).parent().prev().attr("id");
+		var group=$(that).parent().prev().prev().attr("id");
+		var name=$(that).parent().parent().attr("id");
+		console.log("auth_user:"+auth_user, "group:"+group, "name:"+name)
+		var action=confirm("删除主机 ["+name+"] ？");
+		if(action==true){
+			$.ajax({
+				url: "/delhost/",
+				type: "post",
+				data: {"name":name, "group":group, "auth_user":auth_user},
+				headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+			});
+			$(that).parent().parent().remove();
+		}
+	}
+
+	//删除组
+	function delgroup(that){
+		var name=$(that).parent().parent().attr("id");
+		console.log(name)
+		var action=confirm("删除组 ["+name+"] ？");
+		if(action==true){
+			$.ajax({
+				url: "/delgroup/",
+				type: "post",
+				data: {"name":name},
+				headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+			});
+			$(that).parent().parent().remove();
+		}
+	}
+	
+	//检查一键部署任务描述是否重复
+	function chkduplicate(){
+		var check=document.getElementById("task").value
+		console.log(check)
+		if(check!=""){
+			$.ajax({
+				url:"/chkduplicate/",
+				type: "post",
+				data: {"check":check},
+				headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+				success:function(data){
+					console.log(data)
+					if(data=="duplicate"){
+						$("#chkduplicate").show();
+						$("#submit").attr("disabled", true);
+					}
+					else{
+						$("#chkduplicate").hide();
+						$("#submit").attr("disabled", false);
+					}
+				},
+			});
+		}
+	}
+	
+	function deltask(that){
+		var name=$(that).parent().next().text();
+		console.log(name)
+// 		var action=confirm("删除组 ["+name+"] ？");
+// 		if(action==true){
+			$.ajax({
+				url: "/deltask/",
+				type: "post",
+				data: {"name":name},
+				headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+			});
+			$(that).parent().parent().remove();
+// 		}
+	}
+    </script>
+    
+    <!-- END JAVASCRIPTS -->
+</body>
+<!-- END BODY -->
+
+</html>

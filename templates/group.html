@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}一键部署{% endblock %}
+
+{% block content_title %}部署{% endblock %}
+
+{% block content %}
+<div class="margin">
+	<h4 style="font-weight:bold;">添加分组：</h4>
+</div>
+
+<form action="/group/" method="post">
+        {% csrf_token %}
+		组名:&nbsp;<input type="text" name="name" required />
+        &nbsp;&nbsp;&nbsp;&nbsp;
+		备注:&nbsp;<input type="text" name="comment" />
+        &nbsp;&nbsp;&nbsp;&nbsp;
+		
+		<input type="submit" value="添加" />
+		<hr>
+</form>		
+
+<div class="margin">
+	<h4 style="font-weight:bold;">分组列表：</h4>
+</div>
+
+<div>
+
+<table class="table table-striped">
+<!--   <caption>上下文表格布局</caption> -->
+  <thead>
+    <tr>
+      
+      <th>组名</th>
+      <th>备注</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="add">
+<!-- active, success, warning, danger,  -->
+    {% for group in groups %}
+    <tr id="{{ group.name }}">
+	  <td>{{ group.name }}</td>
+	  <td>{{ group.comment }}</td>
+      <td><button type="button" class="close" onclick="delgroup(this)">×</button></td>
+      <td></td>
+	</tr>
+	{% endfor %}
+    <tr>
+      <td>产品1</td>
+      <td>23/11/2013</td>
+      <td><button type="button" class="close">×</button></td>
+      <td></td>
+    </tr>
+
+  </tbody>
+</table>
+</div>
+
+<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel">Modal header</h3>
+  </div>
+  <div class="modal-body">
+    <p id="myModalBody">One fine body…</p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">关闭</button>
+  </div>
+</div>
+
+
+
+<!-- 进度条 -->
+<!-- <div class="progress"> -->
+<!--   <div class="bar" style="width: {{ persentage }}%;"></div> -->
+<!-- </div> -->
+
+<!-- {% include 'result.html' %} -->
+
+{% endblock %}

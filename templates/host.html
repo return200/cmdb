@@ -1,94 +1,85 @@
 {% extends 'base.html' %}
-{% block title %}一键部署{% endblock %}
+{% block title %}主机列表{% endblock %}
 
-{% block content_title %}部署{% endblock %}
+{% block content_title %}主机列表{% endblock %}
 
 {% block content %}
-<div class="margin">
-	<h4 style="font-weight:bold;">添加主机：</h4>
+<div class="margin pull-left">
+    <button type="button" class="btn btn-default" href="#templateModal" data-toggle="modal">模版添加</button>
+    <button type="button" class="btn btn-default">手动添加</button>
+    <button type="button" class="btn btn-default">导出</button>
+    <h5 style="color:red">{{ info }}</h5>
 </div>
 
-<form action="/host/" method="post">
+<div class="pull-right">
+    <form class="pull-right" action="/search/" method="post">
         {% csrf_token %}
-		主机地址:&nbsp;<input type="text" name="name" required>
-        &nbsp;&nbsp;&nbsp;&nbsp;
-		组别:&nbsp;
-		<select id="group" name="group" required>
-				<option></option>
-			{% for group in groups %}
-		  		<option value="{{ group }}">{{ group }}</option> 
-			{% endfor %}
-		</select>
-		&nbsp;&nbsp;&nbsp;&nbsp;
-		<br/>
-        认证用户:&nbsp;<input type="text" name="auth_user" required>
-        &nbsp;&nbsp;&nbsp;&nbsp;
-{#		密码:&nbsp;#}
-{#        <input type="password" name="passw0rd" required>#}
-{#        &nbsp;&nbsp;&nbsp;&nbsp;#}
-		<input type="submit" value="添加" />
-		<hr>
-</form>		
-
-<div class="margin">
-	<h4 style="font-weight:bold;">主机列表：</h4>
+        <input class="span9" type="input" name="search" placeholder="可模糊搜索，不区分大小写">
+        <button class="btn btn-default" type="submit">搜索</button>
+    </form>
 </div>
+
 
 <div>
-
-<table class="table table-striped">
-<!--   <caption>上下文表格布局</caption> -->
+<table class="table table-hover table-bordered table-striped table-condensed">
   <thead>
     <tr>
-      
-      <th>主机名</th>
-      <th>组别</th>
+      <th>IP地址</th>
       <th>认证用户</th>
-      <th></th>
+      <th>主机状态</th>
+      <th>检测时间</th>
+      <th>操作</th>
     </tr>
-  </thead>
-  <tbody id="add">
-<!-- active, success, warning, danger,  -->
-    {% for host in hosts %}
-    <tr id="{{ host.name }}">
-	  <td id="{{ host.name }}">{{ host.name }}</td>
-	  <td id="{{ host.group }}">{{ host.group }}</td>
-	  <td id="{{ host.auth_user }}">{{ host.auth_user }}</td>
-      <td><button type="button" class="close" onclick="delhost(this)">×</button></td>
-      <td></td>
-	</tr>
-	{% endfor %}
+    </thead>
+  <tbody>
     <tr>
-      <td id="host_name">产品1</td>
-      <td id="host_group">23/11/2013</td>
-      <td id="auth_user"><button type="button" class="close" onclick="delhost(this)">×</button></td>
-      <td></td>
-    </tr>
+        <td id="ip">192.168.2.1</td>
+        <td>wwwuser</td>
+        <td>UP</td>
+        <td>2017-11-22 10:10:10</td>
+        <td>
+            <button class="btn btn-default">检测</button>
+            <button class="btn btn-default">改密</button>
+            <button class="btn btn-default">删除</button>
 
+        </td>
+    </tr>   
+    {% for each in info.object_list %}
+    <tr>
+        <td name="ip">{{ each.ip }}</td>
+        <td>{{ each.hostname }}</td>
+        <td>
+            <button class="btn btn-default" onclick="delitem(this)">删除</button>
+        </td>
+    </tr>
+    {% endfor %}
   </tbody>
 </table>
 </div>
 
-<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div id="templateModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="templateModalLabel" aria-hidden="true">
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <h3 id="myModalLabel">Modal header</h3>
+    <h3 id="templateModalLabel">模版添加</h3>
   </div>
   <div class="modal-body">
-    <p id="myModalBody">One fine body…</p>
+    <div><h5>第一步：</h5><a href="/download/" class="a-upload">下载模版</a></div>
+    <div>
+        
+        <h5>第二步：</h5>
+        <form action="/host/" method="post">
+            {% csrf_token %}
+            <a href="javascript:;" class="a-upload">
+                <input type="file" name="" id="">上传模版
+            </a>  
+            
+            <h5>第三步：</h5>
+            <button type="submit" class="btn btn-default">开始添加</button>
+        </form>
+    </div>
   </div>
   <div class="modal-footer">
     <button class="btn" data-dismiss="modal" aria-hidden="true">关闭</button>
   </div>
 </div>
-
-
-
-<!-- 进度条 -->
-<!-- <div class="progress"> -->
-<!--   <div class="bar" style="width: {{ persentage }}%;"></div> -->
-<!-- </div> -->
-
-<!-- {% include 'result.html' %} -->
-
 {% endblock %}

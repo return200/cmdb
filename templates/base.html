@@ -21,6 +21,7 @@
     <link href="/static/css/style-responsive.css" rel="stylesheet" type="text/css" />
     <link href="/static/css/default.css" rel="stylesheet" type="text/css" id="style_color" />
     <link href="/static/css/uniform.default.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/input.css" rel="stylesheet" type="text/css" />
 	<!-- mask alert -->
     <!-- mask alert -->
     <!-- END GLOBAL MANDATORY STYLES -->
@@ -110,7 +111,7 @@
                     </a>
                 </li>
 				<li>
-                    <a href="/crontab/">
+                    <a href="/host/">
                         <i class="icon-time"></i>
                         <span class="title">主机管理</span>
                     </a>
@@ -135,12 +136,11 @@
                 <div class="row-fluid">
                     <div class="span12">
                         <!-- BEGIN PAGE TITLE & BREADCRUMB-->
-                        <h3 class="page-title">
+                        <h4 class="page-title">
 							{% block content_title %}
-							ansible平台
+							cmdb资产管理平台
 							{% endblock %}
-							<small></small>
-                        </h3>
+                        </h4>
                         <!-- END PAGE TITLE & BREADCRUMB-->
                     </div>
                 </div>
@@ -182,321 +182,51 @@
             // autoplay: 2000,
         });
     }
-
-	//crontab切换动作
-    function content(){
-		var a=document.getElementById("action").value;
-		if (a=="delete"){
-			b=document.getElementById("content");
-			b.setAttribute("hidden", true);
-		}
-		else{
-			b=document.getElementById("content");
-			b.removeAttribute("hidden", true);
-		}
-	}
 	
-	//检查input是否为空：file copy shell service software crontab
-	function file(){
-			if (document.getElementById("dest").value==""){
-					alert("请输入目标对象！")
-					return false;
-			}
-			return true;
-	}
-
-	function copy(){
-			if (document.getElementById("file").value==""){
-					alert("请上传文件！")
-					return false;
-			}
-			if (document.getElementById("dest").value==""){
-					alert("请输入目标路径！")
-					return false;
-			}
-			return true;
-	}
-
-	function shell(){
-			if (document.getElementById("cmd").value==""){
-					alert("请输入命令内容！")
-					return false;
-			}
-			return true;
-	}
-
-	function service(){
-			if (document.getElementById("name").value==""){
-					alert("请输入服务名称！")
-					return false;
-			}
-			return true;
-	}
-
-	function software(){
-			if (document.getElementById("name").value==""){
-					alert("请输入软件名称！")
-					return false;
-			}
-			return true;
-	}
-
-	function crontab(){
-			if (document.getElementById("name").value==""){
-					alert("请输入任务名称！")
-					return false;
-			}
-			return true;
-	}
-	
-	//一键部署 检查输入是否为空
-// 	function submitit(){
-// 		if(document.getElementById("task").value==""){
-// 			alert("请输入任务描述！")
-// 			return false;
-// 		}
-// 		else if(document.getElementById("file").value==""){
-// 			alert("请上传文件!")
-// 			return false;
-// 		}
-// 	}
-
-	//点击按钮添加选择的功能
-// 	function additem(){
-// 		if(document.getElementById("additem").value=="file"){
-// 			$(".add").append('<div id="id1" class="margin">目标文件:&nbsp;<input type="text" id="id1" name="id1">&nbsp;&nbsp;动作:&nbsp;<select name="id2"><option value="touch">新建文件</option><option value="directory">新建目录</option><option value="absent">删除文件/目录</option><option value="modify">修改属性</option></select>&nbsp;&nbsp;参数:&nbsp;<input type="text" name="id3" placeholder="如：owner=root mode=755"><a onclick="javascript:$(this).parent().remove()">&nbsp;&nbsp;删除</a></div>');
-// 		}
-// 		else if(document.getElementById("additem").value=="copy"){
-// 			$(".add").append('<div class="margin">文件:&nbsp;<input type="file" id="file" name="copy" />&nbsp;&nbsp;目标路径:&nbsp;<input type="text" id="dest" name="copy"><a onclick="javascript:$(this).parent().remove()">&nbsp;&nbsp;删除</a></div>');
-// 		}
-// 		else if(document.getElementById("additem").value=="service"){
-// 			$(".add").append('<div class="margin">服务名称:&nbsp;<input type="text" id="name" name="service" placeholder="">&nbsp;&nbsp;动作:&nbsp;<select name="service"><option value="started">启动</option> <option value="stoped">停止</option> </select>&nbsp;&nbsp;进程名称:&nbsp;<input type="text" name="service" placeholder="如：/usr/bin/java"><a onclick="javascript:$(this).parent().remove()">&nbsp;&nbsp;删除</a></div>');
-// 		}
-// 		else if(document.getElementById("additem").value=="software"){
-// 			$(".add").append('<div class="margin">服务名称:&nbsp;<input type="text" id="name" name="software" placeholder="">&nbsp;&nbsp;动作:&nbsp;<select name="software"><option value="started">启动</option> <option value="stoped">停止</option> </select>&nbsp;&nbsp;进程名称:&nbsp;<input type="text" name="software" placeholder="如：/usr/bin/java"><a onclick="javascript:$(this).parent().remove()">&nbsp;&nbsp;删除</a></div>');
-// 		}
-// 	}
-
-	//添加任务
-	function taskadd(){		
-		var task=document.getElementById("task").value
-		var group=document.getElementById("group").value
-		var file=document.getElementById("file").value
-		
-		if(task==""){
-			alert("请输入任务描述！")
-			return false;
-		}
-		else if(group==""){
-			alert("请选择组别!")
-			return false;
-		}
-		else if(file==""){
-			alert("请输入项目文件!")
-			return false;
-		}
-// 		else{
-// 			$("#add").append('<tr class="active"><td><button type="button" class="close" onclick="javascript:$(this).parent().parent().remove()">×</button></td><td>'+task+'</td><td>'+group+'</td><td>'+file+'</td><td class="active" id="status">待部署</td><td><a href="#myModal" class="btn-link" data-toggle="modal" onclick="return getcmd2(this)">查看</a></td><td><button class="chkrun" id="0" onclick="return runcmd2(this)">部署</button></td></tr>')
-// 		}
- 	}
-
-	
-	
-	function runcmd2(that){
-		var task=$(that).parent().prev().prev().prev().prev().prev().text()	//任务描述
-		var group=$(that).parent().prev().prev().prev().prev().text()	//任务组别
-		var file=$(that).parent().prev().prev().prev().text()	//项目文件
-		var id=$(that).attr("id")	//检查是否重复部署
-		console.log(task,group,file,id)
-// 		var status=document.getElementById("status").innerText
-// 		var url="/runcmd/"+"{{ request.user.username }}"+"/"
-// 		console.log(url)
-		//查询结果
-		
-		if(id=="0"){
-		$.ajax({
-			url: "/runcmd/",
-//			url: url,
-			type: "post",
-			data: {"task":task, "group":group, "file":file},
-			headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
-			success: function(status){
- 				if(status=="ok"){
- 					console.log(status);
-					alert("开始部署！");
- 					$(that).parent().prev().prev().text("已部署");	//更改部署状态
- 					$(that).parent().parent().attr("class","success");
-//					document.getElementById("status").innerText="已部署";	//更改部署状态
-//					$(".alert").show();
- 				}
- 				else{
- 					alert("部署失败!")
- 				}
-			}
-		})
-		if($(that).text()=="已部署"){
-			console.log($(that).text())
-			$(that).attr("disabled",false);
-		}
-		else{
-			$(that).attr("disabled",true);
-		}
-//		$(".chkrun").attr("id","1");	//部署后状态改为1
-// 		$(".log").attr("href", url);	//日志路径
-		}
-		else{
-			alert("请勿重复部署！")
-		}
-	}
-	
-	
-	
-	//执行任务	
-	function runcmd(){
-		var task=document.getElementById("task").value
-		var group=document.getElementById("group").value
-		var file=document.getElementById("file").value
-		var id=$(".chkrun").attr("id")	//检查是否重复部署
-// 		var status=document.getElementById("status").innerText
-// 		var url="/runcmd/"+"{{ request.user.username }}"+"/"
-// 		console.log(url)
-		//查询结果
-		
-		if(id=="0"){
-		$.ajax({
-			url: "/runcmd/",
-//			url: url,
-			type: "post",
-			data: {"task":task, "group":group, "file":file},
-			headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
-			success: function(status){
- 				if(status=="ok"){
- 					console.log(status);
-					alert("开始部署！");
-					document.getElementById("status").innerText="已部署";	//更改部署状态
-//					$(".alert").show();
- 				}
- 				else{
- 					alert("部署失败!")
- 				}
-			}
-		})
-		$(".chkrun").attr("id","1");	//部署后状态改为1
-// 		$(".log").attr("href", url);	//日志路径
-		}
-		else{
-			alert("请勿重复部署！")
-		}
-	}
-
-	
-	//获取命令执行结果
-	function getcmd2(that){
-		var task=$(that).parent().prev().prev().prev().prev().text();	//任务描述
-		console.log(task);
-		var url="/getcmd/"+task+"/"
-		
-		document.getElementById("myModalLabel").innerText=task;
-		$.ajax({
-			url: url,
-			type: "post",
-			headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
- 			success:function(result){
-				console.log(result);
-				document.getElementById("myModalBody").innerText=result;
- 			}
-		});		
-	}
-	
-	
-	//获取命令执行结果
-	function getcmd(){
-		var task=document.getElementById("task").value;
-		var url="/getcmd/"+task+"/"
-		
-		document.getElementById("myModalLabel").innerText=task;
-		$.ajax({
-			url: url,
-			type: "post",
-			headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
- 			success:function(result){
-				console.log(result);
-				document.getElementById("myModalBody").innerText=result;
- 			}
-		});		
-	}
-	
-	//删除主机
-	function delhost(that){
- 		var auth_user=$(that).parent().prev().attr("id");
-		var group=$(that).parent().prev().prev().attr("id");
-		var name=$(that).parent().parent().attr("id");
-		console.log("auth_user:"+auth_user, "group:"+group, "name:"+name)
-		var action=confirm("删除主机 ["+name+"] ？");
-		if(action==true){
-			$.ajax({
-				url: "/delhost/",
-				type: "post",
-				data: {"name":name, "group":group, "auth_user":auth_user},
-				headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
-			});
-			$(that).parent().parent().remove();
-		}
-	}
-
-	//删除组
-	function delgroup(that){
-		var name=$(that).parent().parent().attr("id");
-		console.log(name)
-		var action=confirm("删除组 ["+name+"] ？");
-		if(action==true){
-			$.ajax({
-				url: "/delgroup/",
-				type: "post",
-				data: {"name":name},
-				headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
-			});
-			$(that).parent().parent().remove();
-		}
-	}
-	
-	//检查一键部署任务描述是否重复
-	function chkduplicate(){
-		var check=document.getElementById("task").value
-		console.log(check)
-		if(check!=""){
-			$.ajax({
-				url:"/chkduplicate/",
-				type: "post",
-				data: {"check":check},
-				headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
-				success:function(data){
-					console.log(data)
-					if(data=="duplicate"){
-						$("#chkduplicate").show();
-						$("#submit").attr("disabled", true);
-					}
-					else{
-						$("#chkduplicate").hide();
-						$("#submit").attr("disabled", false);
-					}
-				},
-			});
-		}
-	}
-	
-	function deltask(that){
-		var name=$(that).parent().next().text();
+    $("#renew").click(function(a){
+        console.log('renew');
+        $.ajax({
+            url: "/getall/",
+            type: "post",
+            headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+            success:function(update_time){
+                console.log(update_time);
+                document.getElementById('update_time').innerText=update_time;
+            }
+        });
+        alert("更新中，稍后刷新页面！")
+    })
+    
+    function renew_this(that){
+        var ip=$(that).parent().prev().prev().prev().prev().prev().prev().prev().text();
+        console.log(ip);
+        $.ajax({
+            url: "/getone/"+ip,
+            tpye: "post",
+            data: {"ip":ip},
+            headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+            success:function(update_time){
+                console.log(update_time);
+                document.getElementById('update_time').innerText=update_time;
+            }
+        });
+        alert("更新中，稍后刷新页面！")
+    }
+    
+	function delitem(that){
+		var ip=$(that).parent().prev().prev().prev().prev().prev().prev().prev().text();
 		console.log(name)
 // 		var action=confirm("删除组 ["+name+"] ？");
 // 		if(action==true){
 			$.ajax({
-				url: "/deltask/",
+				url: "/delitem/",
 				type: "post",
-				data: {"name":name},
+				data: {"ip":ip},
 				headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
 			});
 			$(that).parent().parent().remove();
+            var count=document.getElementById('count').innerText;
+            document.getElementById('count').innerText=count-1;
 // 		}
 	}
     </script>

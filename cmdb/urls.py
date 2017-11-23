@@ -24,4 +24,7 @@ urlpatterns = [
     url(r'^getone/(.*)/$', views.getOne, name='ip'),
     url(r'^getall/$', views.getAll),
     url(r'^search/$', views.search),
+    url(r'^delitem/$', views.delitem),
+    url(r'^host/$', views.host),
+    url(r'^download/$', views.download),
 ]

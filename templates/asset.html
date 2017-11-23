@@ -1,19 +1,20 @@
 {% extends 'base.html' %}
-{% block title %}服务器列表{% endblock %}
+{% block title %}资产列表{% endblock %}
 
-{% block content_title %}服务器列表{% endblock %}
+{% block content_title %}资产列表{% endblock %}
 
 {% block content %}
 <div class="margin">
-    <button type="button" class="btn pull-left">批量更新</button>
+    <button type="button" class="btn pull-left" id="renew">批量更新</button>
     <form class="pull-right" action="/search/" method="post">
         {% csrf_token %}
         <input class="span9" type="input" name="search" placeholder="可模糊搜索，不区分大小写">
         <button class="btn btn-default" type="submit">搜索</button>
     </form>
 </div>
-{{ get_result }}
-<table class="table table-hover table-bordered table-striped">
+
+<div>
+<table class="table table-hover table-bordered table-striped table-condensed">
   <thead>
     <tr>
       <th>IP地址</th>
@@ -27,23 +28,22 @@
     </tr>
   </thead>
   <tbody>
+    <!-- <tr> -->
+        <!-- <td id="ip">192.168.2.1</td> -->
+        <!-- <td>node1</td> -->
+        <!-- <td>centos 6.5 centos 6.5</td> -->
+        <!-- <td>Xen E6 Xen E6 Xen E6</td> -->
+        <!-- <td>1核1线程 x 1</td> -->
+        <!-- <td>988 MB</td> -->
+        <!-- <td>20 GB</td> -->
+        <!-- <td> -->
+            <!-- <button class="btn btn-default">删除</button> -->
+            <!-- <button class="btn btn-default">更新</button> -->
+        <!-- </td> -->
+    <!-- </tr> -->   
+    {% for each in info.object_list %}
     <tr>
-        <td>192.168.2.1</td>
-        <td>node1</td>
-        <td>centos 6.5 centos 6.5vcentos 6.5</td>
-        <td>Xen E6 Xen E6 Xen E6</td>
-        <td>1核1线程 x 1</td>
-        <td>988 MB</td>
-        <td>20 GB</td>
-        <td>
-            <button class="btn btn-default">删除</button>
-            <button class="btn btn-default">更新</button>
-        </td>
-    </tr>
-    
-    {% for each in info %}
-    <tr>
-        <td>{{ each.ip }}</td>
+        <td name="ip">{{ each.ip }}</td>
         <td>{{ each.hostname }}</td>
         <td>{{ each.os }}</td>
         <td>{{ each.cpu_model }}</td>
@@ -51,12 +51,39 @@
         <td>{{ each.mem }} MB</td>
         <td>{{ each.disk }}</td>
         <td>
-            <button class="btn btn-default">删除</button>
-            <button class="btn btn-default">更新</button> 
+            <button class="btn btn-default" onclick="delitem(this)">删除</button>
+            <button class="btn btn-default" onclick="renew_this(this)">更新</button> 
         </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
+
+<div class="pull-left">
+    总共 <span id="count">{{ count }}</span> 条记录
+    最近更新时间：<span id="update_time">{{ update_time|date:"Y-m-d H:i:s" }}</span>
+</div>
+
+<div class="pagination pull-right">
+  <ul>
+    {% if info.has_previous %}
+        <li><a href="?{{ info.previous_page_number.querystring }}">上一页</a></li>
+    {% endif %}
+    {% for page in info.pages %}
+        {% if page %}
+            {% ifequal page info.number %}
+                <li class="active"><a href="?{{ page.querystring }}">{{ page }}</a></li>
+            {% else %}
+                <li><a class="page" href="?{{ page.querystring }}">{{ page }}</a></li>
+            {% endifequal %}
+        {% else %}
+            <li class="none"><a href="">...</a></li>
+        {% endif %}
+    {% endfor %}
+    {% if info.has_next %}
+        <li><a href="?{{ info.next_page_number.querystring }}">下一页</a></li>
+    {% endif %}
+</div>
 
 {% endblock %}

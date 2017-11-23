@@ -1,27 +1,72 @@
 # _*_ coding: utf-8 _*_
 
 from django.shortcuts import render
+from django.http.response import HttpResponse, HttpResponseRedirect
 from django.db.models import Q
+from django.utils import timezone
+from pure_pagination import Paginator, EmptyPage, PageNotAnInteger
+import time, datetime
+import os
+import xlrd
 
-from app01.models import Host
+from app01.models import Asset
 
 import ansible.runner
 
 # Create your views here.
 
 def asset(request):
-    info = Host.objects.all()
-    return render(request, 'asset.html', {'info': info})
+    all_info = Asset.objects.all()
+    count = Asset.objects.all().count()
+    insert_time = Asset.objects.order_by('-update_time')[:1]
+
+    if insert_time:
+        for update_time in insert_time:
+            update_time = update_time.update_time 
+#            print update_time
+    else:
+        update_time = u'未更新'
+
+    try:
+        page = request.GET.get('page', 1)
+    except PageNotAnInteger:
+        page = 1
+    # Provide Paginator with the request object for complete querystring generation
+    p = Paginator(all_info, 10, request=request)
+    info = p.page(page)
+
+    return render(request, 'asset.html', {'info': info, 'count': count, 'update_time': update_time})
 
 def search(request):
     keyword = request.POST['search']
-    info = Host.objects.filter(
+    search_info = Asset.objects.filter(
         Q(ip__icontains=keyword)|Q(hostname__icontains=keyword)|
-	Q(os__icontains=keyword)|Q(cpu_model__icontains=keyword)|
-	Q(mem__icontains=keyword)|Q(cpu__icontains=keyword)|
-	Q(disk__icontains=keyword)
+        Q(os__icontains=keyword)|Q(cpu_model__icontains=keyword)|
+        Q(mem__icontains=keyword)|Q(cpu__icontains=keyword)|
+        Q(disk__icontains=keyword)
     )
-    return render(request, 'asset.html', {'info': info})
+    print "search_info %s" % type(search_info)
+
+    count = search_info.count()
+
+    insert_time = Asset.objects.order_by('-update_time')[:1]
+    if insert_time:
+        for update_time in insert_time:
+            update_time = update_time.update_time
+#            print update_time
+    else:
+        update_time = u'未更新'
+
+    try:
+        page = request.GET.get('page', 1)
+    except PageNotAnInteger:
+        page = 1
+    # Provide Paginator with the request object for complete querystring generation
+    p = Paginator(search_info, 10, request=request)
+    info = p.page(page)
+
+
+    return render(request, 'asset.html', {'info': info, 'count': count, 'update_time': update_time})
 
 def getOne(request, ip):
     get_result = None
@@ -45,11 +90,16 @@ def getOne(request, ip):
         if data['contacted'][ip]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
             disk = data['contacted'][ip]['ansible_facts']['ansible_devices'][partation]['size']
 
-    Host.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
-    info = Host.objects.all()
+    print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
+    print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+
     if not 'failed' in data:
-        get_result = 'success'
-    return render(request, 'asset.html', {'get_result': get_result, 'info': info}) 
+        #get_result = 'success'
+	local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+	update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+	Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+#	print update_time
+    return HttpResponse(update_time)
 
 
 def getAll(request):
@@ -59,7 +109,11 @@ def getAll(request):
         module_name='setup', pattern='all', forks='10'
     )
     data = runner.run()
-    Host.objects.all().delete()
+    if not 'failed' in data:
+        Asset.objects.all().delete()
+
+    operation_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+    print operation_time
 
     for each in data['contacted'].keys():
 	#ip_all = data['contacted'][each]['ansible_facts']['ansible_all_ipv4_addresses']
@@ -80,6 +134,77 @@ def getAll(request):
 	    if data['contacted'][each]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
 	        disk = data['contacted'][each]['ansible_facts']['ansible_devices'][partation]['size']
 	print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-	Host.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
-	info = Host.objects.all()
-    return render(request, 'index.html', {'info': info})
+	Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+
+    insert_time = Asset.objects.order_by('-update_time')[:1]
+
+    if insert_time:
+        for update_time in insert_time:
+            update_time = update_time.update_time 
+#            print update_time
+    else:
+        update_time = u'未更新'
+    return HttpResponse(update_time)
+
+def delitem(request):
+    status = ''
+    ip = request.POST['ip']
+    Asset.objects.filter(ip=ip).delete()
+    if not Asset.objects.filter(ip=ip):
+        status = "success"
+    else:
+        status = "failed"
+
+    return HttpResponse(status) 
+
+def host(request):
+    filename = os.path.join(os.getcwd(), 'media/template.xls')
+    print filename
+    if os.path.isfile(filename):
+        data = xlrd.open_workbook(filename)
+        table = data.sheets()[0]
+        nrows = table.nrows
+        for i in range(1, nrows):
+            ip = table.row_values(i)[0]
+	    username = table.row_values(i)[1]
+            password = table.row_values(i)[2]
+            print u"第%s个：%s %s %s" % (i, ip, username, password)
+    else:
+        info = u'模版文件不存在！'
+    return render(request, 'host.html')
+
+def download(request):
+    filename = 'media/template.xls'
+    if os.path.isfile(filename):
+        f =open(filename)
+        data = f.read()
+        f.close()
+        #以下设置项是为了下载任意类型文件
+        response = HttpResponse(data) 
+        response['Content-Disposition'] = 'attachment; filename=%s' % 'template.xls'
+        return response
+    else:
+        return render(request, 'host.html', {'info': u'模版文件不存在！'})
+
+def change_pwd(request):
+#    1.add sudo permission to normal user eg. usermode wheel user01
+#    2.run cmd 'sudo passwd user01' to change password of user01
+    pass
+
+def login(request):
+    if request.method == "GET":
+        return render(request, 'login.html')
+    elif request.method == "POST":
+        username = request.POST['username']
+	password = request.POST['passw0rd']
+        url = request.POST.get['next']
+	user = auth.authenticated(username=username, password=password)
+	if user is not None and user.is_active:
+	    login(request, user)
+	    return HttpResponseRedirect(url or '/')
+	else:
+	    return render(request, 'login.html', {'error': error})
+
+def logoutview(request):
+    auth.logout(request)
+    return HttpResponseRedirect("/")

@@ -9,7 +9,8 @@ import time, datetime
 import os
 import xlrd
 
-from app01.models import Asset
+from app01.models import Asset, Host
+from other import hosts_ssh, hosts_file
 
 import ansible.runner
 
@@ -146,7 +147,7 @@ def getAll(request):
         update_time = u'未更新'
     return HttpResponse(update_time)
 
-def delitem(request):
+def delasset(request):
     status = ''
     ip = request.POST['ip']
     Asset.objects.filter(ip=ip).delete()
@@ -158,20 +159,17 @@ def delitem(request):
     return HttpResponse(status) 
 
 def host(request):
-    filename = os.path.join(os.getcwd(), 'media/template.xls')
-    print filename
-    if os.path.isfile(filename):
-        data = xlrd.open_workbook(filename)
-        table = data.sheets()[0]
-        nrows = table.nrows
-        for i in range(1, nrows):
-            ip = table.row_values(i)[0]
-	    username = table.row_values(i)[1]
-            password = table.row_values(i)[2]
-            print u"第%s个：%s %s %s" % (i, ip, username, password)
-    else:
-        info = u'模版文件不存在！'
-    return render(request, 'host.html')
+    all_info = Host.objects.all()
+
+    try:
+        page = request.GET.get('page', 1)
+    except PageNotAnInteger:
+        page = 1
+    # Provide Paginator with the request object for complete querystring generation
+    p = Paginator(all_info, 10, request=request)
+    info = p.page(page)
+
+    return render(request, 'host.html', {'info': info})
 
 def download(request):
     filename = 'media/template.xls'
@@ -184,7 +182,46 @@ def download(request):
         response['Content-Disposition'] = 'attachment; filename=%s' % 'template.xls'
         return response
     else:
-        return render(request, 'host.html', {'info': u'模版文件不存在！'})
+        return render(request, 'host.html', {'error': u'模版文件不存在！'})
+
+def upload(request):
+    if request.method == "POST":    # 请求方法为POST时，进行处理  
+        myFile =request.FILES.get("templateFile", None)    # 获取上传的文件，如果没有文件，则默认为None  
+        destination = open(os.path.join("upload",myFile.name), 'wb+')    # 打开特定的文件进行二进制的写操作  
+
+        for chunk in myFile.chunks():      # 分块写入文件  
+            destination.write(chunk) 
+        destination.close() 
+
+        if not os.path.isfile('upload/template.xls'):
+   #     if not myFile: 
+            return render(request, 'host.html',{'error': u'模版文件上传失败！'})
+    return HttpResponseRedirect('/host/')
+
+def template_add(request):
+    count = 5
+    filename = 'upload/template.xls'
+    while True:
+        if os.path.isfile(filename):
+            data = xlrd.open_workbook(filename)
+            table = data.sheets()[0]
+            nrows = table.nrows
+            for i in range(1, nrows):
+                ip = table.row_values(i)[0]
+                username = table.row_values(i)[1]
+                password = table.row_values(i)[2]
+                info = hosts_ssh.do_ssh(request, ip, username, password)
+                print info
+                if not Host.objects.filter(ip=ip):
+                    Host.objects.create(ip=ip, username=username, status=info)
+                else:
+                    Host.objects.filter(ip=ip).update(username=username, status=info) 
+	    break
+	else:
+	    count-=1
+	    time.sleep(1)
+    return HttpResponse('')
+
 
 def change_pwd(request):
 #    1.add sudo permission to normal user eg. usermode wheel user01

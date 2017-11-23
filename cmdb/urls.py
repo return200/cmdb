@@ -24,7 +24,13 @@ urlpatterns = [
     url(r'^getone/(.*)/$', views.getOne, name='ip'),
     url(r'^getall/$', views.getAll),
     url(r'^search/$', views.search),
-    url(r'^delitem/$', views.delitem),
+    url(r'^delasset/$', views.delasset),
     url(r'^host/$', views.host),
     url(r'^download/$', views.download),
+    url(r'^upload/$', views.upload),
+    url(r'^addhost/template/$', views.template_add),
+    # url(r'^addhost/manual/$', views.template_manual),
+    
+    
+    
 ]

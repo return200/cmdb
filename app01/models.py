@@ -27,4 +27,16 @@ class Asset(models.Model):
         return self.ip
 
 class Host(models.Model):
-    pass
+    ip = models.GenericIPAddressField(max_length=20, verbose_name=u'IP地址')
+    username = models.CharField(max_length=20, verbose_name=u'用户名')
+    add_time = models.DateTimeField(auto_now_add=True, verbose_name=u'添加时间')
+    update_time = models.DateTimeField(auto_now=True, verbose_name=u'上次检测时间')
+    status = models.CharField(max_length=50, verbose_name=u'添加状态') 
+    
+    class Meta:
+        verbose_name = u"主机信息表"
+        verbose_name_plural = verbose_name
+        ordering = ['ip']
+
+    def __unicode__(self):
+        return self.ip

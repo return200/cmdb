@@ -75,31 +75,69 @@ def getOne(request, ip):
         module_name='setup', pattern=ip,
     )
     data = runner.run()
-    hostname = data['contacted'][ip]['ansible_facts']['ansible_hostname']
-    os = data['contacted'][ip]['ansible_facts']['ansible_lsb']['description']
-    cpu_core = data['contacted'][ip]['ansible_facts']['ansible_processor_cores']
-    #单颗的核数
-    cpu_thread = data['contacted'][ip]['ansible_facts']['ansible_processor_threads_per_core']
-    #单核的线程数
-    cpu_count = data['contacted'][ip]['ansible_facts']['ansible_processor_count']
-    #颗数
-    cpu = "%s核%s线程 x %s" %(cpu_core, cpu_thread, cpu_count)
-    cpu_model = data['contacted'][ip]['ansible_facts']['ansible_processor'][-1]
-    mem = data['contacted'][ip]['ansible_facts']['ansible_memtotal_mb']
-    device = data['contacted'][ip]['ansible_facts']['ansible_devices'].keys()
-    for partation in device:
-        if data['contacted'][ip]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
-            disk = data['contacted'][ip]['ansible_facts']['ansible_devices'][partation]['size']
+    print data
 
-    print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
-    print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+    local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+    update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
 
-    if not 'failed' in data:
-        #get_result = 'success'
-	local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-	update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
-	Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-#	print update_time
+    for (host, result) in data['contacted'].items():
+        if not 'failed' in result:
+            hostname = data['contacted'][ip]['ansible_facts']['ansible_hostname']
+            os = data['contacted'][ip]['ansible_facts']['ansible_lsb']['description']
+            cpu_core = data['contacted'][ip]['ansible_facts']['ansible_processor_cores']
+            #单颗的核数
+            cpu_thread = data['contacted'][ip]['ansible_facts']['ansible_processor_threads_per_core']
+            #单核的线程数
+            cpu_count = data['contacted'][ip]['ansible_facts']['ansible_processor_count']
+            #颗数
+            cpu = "%s核%s线程 x %s" %(cpu_core, cpu_thread, cpu_count)
+            cpu_model = data['contacted'][ip]['ansible_facts']['ansible_processor'][-1]
+            mem = data['contacted'][ip]['ansible_facts']['ansible_memtotal_mb']
+            device = data['contacted'][ip]['ansible_facts']['ansible_devices'].keys()
+            for partation in device:
+                if data['contacted'][ip]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
+                    disk = data['contacted'][ip]['ansible_facts']['ansible_devices'][partation]['size']
+        
+            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
+            print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+            
+            Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+    
+        elif 'failed' in result:
+            ip = host
+            hostname = 'N/A'
+            os = 'N/A'
+            cpu_core = 'N/A'
+            cpu_thread = 'N/A'
+            cpu_count = 'N/A'
+            cpu = 'N/A'
+            cpu_model = 'N/A'
+            mem = 'N/A'
+            disk = 'N/A'
+    
+            Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+            print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+
+    for (host, result) in data['dark'].items():
+        ip = host
+        hostname = 'N/A'
+        os = 'N/A'
+        cpu_core = 'N/A'
+        cpu_thread = 'N/A'
+        cpu_count = 'N/A'
+        cpu = 'N/A'
+        cpu_model = 'N/A'
+        mem = 'N/A'
+        disk = 'N/A'
+    
+        Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+        print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+
+
+#    if not 'failed' in data:
+#        #get_result = 'success'
+#	Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+##	print update_time
     return HttpResponse(update_time)
 
 
@@ -110,32 +148,105 @@ def getAll(request):
         module_name='setup', pattern='all', forks='10'
     )
     data = runner.run()
-    if not 'failed' in data:
-        Asset.objects.all().delete()
 
-    operation_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-    print operation_time
+    for (host, result) in data['contacted'].items():
+        local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+        
+        if not 'failed' in result:
+            ip = data['contacted'][host]['ansible_facts']['ansible_default_ipv4']['address']
+            hostname = data['contacted'][host]['ansible_facts']['ansible_hostname']
+            os = data['contacted'][host]['ansible_facts']['ansible_lsb']['description']
+            cpu_core = data['contacted'][host]['ansible_facts']['ansible_processor_cores']
+            #单颗的核数
+            cpu_thread = data['contacted'][host]['ansible_facts']['ansible_processor_threads_per_core']
+            #单核的线程数
+            cpu_count = data['contacted'][host]['ansible_facts']['ansible_processor_count']
+            #颗数
+            cpu = "%s核%s线程 x %s" %(cpu_core, cpu_thread, cpu_count)
+            cpu_model = data['contacted'][host]['ansible_facts']['ansible_processor'][-1]
+            mem = data['contacted'][host]['ansible_facts']['ansible_memtotal_mb']
+            device = data['contacted'][host]['ansible_facts']['ansible_devices'].keys()
+            for partation in device:
+                if data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
+                    disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
+            print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+            if not Asset.objects.filter(ip=ip):
+                Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+            else:
+                Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
 
-    for each in data['contacted'].keys():
-	#ip_all = data['contacted'][each]['ansible_facts']['ansible_all_ipv4_addresses']
-	ip = data['contacted'][each]['ansible_facts']['ansible_default_ipv4']['address']
-	hostname = data['contacted'][each]['ansible_facts']['ansible_hostname']
-	os = data['contacted'][each]['ansible_facts']['ansible_lsb']['description']
-	cpu_core = data['contacted'][each]['ansible_facts']['ansible_processor_cores']
-	#单颗的核数
-	cpu_thread = data['contacted'][each]['ansible_facts']['ansible_processor_threads_per_core']
-	#单核的线程数
-	cpu_count = data['contacted'][each]['ansible_facts']['ansible_processor_count']
-	#颗数
-	cpu = "%s核%s线程 x %s" %(cpu_core, cpu_thread, cpu_count)
-	cpu_model = data['contacted'][each]['ansible_facts']['ansible_processor'][-1]
-	mem = data['contacted'][each]['ansible_facts']['ansible_memtotal_mb']
-	device = data['contacted'][each]['ansible_facts']['ansible_devices'].keys()
-	for partation in device:
-	    if data['contacted'][each]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
-	        disk = data['contacted'][each]['ansible_facts']['ansible_devices'][partation]['size']
-	print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-	Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+    for (host, result) in data['contacted'].items():
+        local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+
+        if 'failed' in result:
+            ip = host
+            hostname = 'N/A'
+            os = 'N/A'
+            cpu_core = 'N/A'
+            cpu_thread = 'N/A'
+            cpu_count = 'N/A'
+            cpu = 'N/A'
+            cpu_model = 'N/A'
+            mem = 'N/A'
+            disk = 'N/A'
+
+            if not Asset.objects.filter(ip=ip):
+                Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+            else:
+                Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+        print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+
+    for (host, result) in data['dark'].items():
+        local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+
+        ip = host
+        hostname = 'N/A'
+        os = 'N/A'
+        cpu_core = 'N/A'
+        cpu_thread = 'N/A'
+        cpu_count = 'N/A'
+        cpu = 'N/A'
+        cpu_model = 'N/A'
+        mem = 'N/A'
+        disk = 'N/A'
+ 
+        if not Asset.objects.filter(ip=ip):
+            Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+        else:
+            Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+        print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+
+#    if not 'failed' in data:
+#        Asset.objects.all().delete()
+        
+#        operation_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+#        print operation_time
+#    
+#        for each in data['contacted'].keys():
+#            #ip_all = data['contacted'][each]['ansible_facts']['ansible_all_ipv4_addresses']
+#            ip = data['contacted'][each]['ansible_facts']['ansible_default_ipv4']['address']
+#            hostname = data['contacted'][each]['ansible_facts']['ansible_hostname']
+#            os = data['contacted'][each]['ansible_facts']['ansible_lsb']['description']
+#            cpu_core = data['contacted'][each]['ansible_facts']['ansible_processor_cores']
+#            #单颗的核数
+#            cpu_thread = data['contacted'][each]['ansible_facts']['ansible_processor_threads_per_core']
+#            #单核的线程数
+#            cpu_count = data['contacted'][each]['ansible_facts']['ansible_processor_count']
+#            #颗数
+#            cpu = "%s核%s线程 x %s" %(cpu_core, cpu_thread, cpu_count)
+#            cpu_model = data['contacted'][each]['ansible_facts']['ansible_processor'][-1]
+#            mem = data['contacted'][each]['ansible_facts']['ansible_memtotal_mb']
+#            device = data['contacted'][each]['ansible_facts']['ansible_devices'].keys()
+#            for partation in device:
+#                if data['contacted'][each]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
+#                    disk = data['contacted'][each]['ansible_facts']['ansible_devices'][partation]['size']
+#            print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+#            Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+#    else:
+#        print data
 
     insert_time = Asset.objects.order_by('-update_time')[:1]
 
@@ -199,6 +310,7 @@ def upload(request):
     return HttpResponseRedirect('/host/')
 
 def template_add(request):
+    flag = 0
     count = 5
     filename = 'upload/template.xls'
     while True:
@@ -210,14 +322,20 @@ def template_add(request):
                 ip = table.row_values(i)[0]
                 username = table.row_values(i)[1]
                 password = table.row_values(i)[2]
-                info = hosts_ssh.do_ssh(request, ip, username, password)
+                info = hosts_ssh.do_ssh(request, ip, username, password, flag)
                 print info
                 if not Host.objects.filter(ip=ip):
                     Host.objects.create(ip=ip, username=username, status=info)
                 else:
-                    Host.objects.filter(ip=ip).update(username=username, status=info) 
+                    local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+                    update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+                    Host.objects.filter(ip=ip).update(username=username, status=info, update_time=update_time) 
+		#info = hosts_file.create_file(request, ip, flag)
+	        flag = 1
+	        #print info
 	    break
 	else:
+	    print u'未发现上传的模版文件，剩余重试次数：%s' % count
 	    count-=1
 	    time.sleep(1)
     return HttpResponse('')

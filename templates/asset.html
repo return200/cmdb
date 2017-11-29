@@ -6,8 +6,8 @@
 {% block content %}
 <div class="margin">
     <button type="button" class="btn pull-left" id="renew">批量更新</button>
-    <form class="pull-right" action="/search/" method="post">
-        {% csrf_token %}
+    <form class="pull-right" action="/search/asset/" method="get">
+        <!-- {% csrf_token %} -->
         <input class="span9" type="input" name="search" placeholder="可模糊搜索，不区分大小写">
         <button class="btn btn-default" type="submit">搜索</button>
     </form>

@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'app01',
     'pure_pagination',
+    'xadmin',
+    'crispy_forms',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -119,6 +121,7 @@ USE_L10N = True
 
 USE_TZ = False
 
+LOGIN_URL = '/login/'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/

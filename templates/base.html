@@ -196,8 +196,8 @@
         var ip=$(that).parent().prev().prev().prev().prev().prev().prev().prev().text();
         console.log(ip);
         $.ajax({
-            url: "/getone/"+ip,
-            tpye: "post",
+            url: "/getone/",
+            type: "post",
             data: {"ip":ip},
             headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
             success:function(update_time){
@@ -210,7 +210,7 @@
     
 	function delasset(that){
 		var ip=$(that).parent().prev().prev().prev().prev().prev().prev().prev().text();
-		console.log(name)
+		console.log(ip)
 // 		var action=confirm("删除组 ["+name+"] ？");
 // 		if(action==true){
 			$.ajax({
@@ -218,12 +218,45 @@
 				type: "post",
 				data: {"ip":ip},
 				headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+                success: function(status){
+                    console.log(status);
+                    if(status=='success'){
+                        var count=document.getElementById('count').innerText;
+                        document.getElementById('count').innerText=count-1;
+                        $(that).parent().parent().remove();
+                    }
+                    else{
+                        alert('删除失败！')
+                    }
+                }
 			});
-			$(that).parent().parent().remove();
-            var count=document.getElementById('count').innerText;
-            document.getElementById('count').innerText=count-1;
+			<!-- $(that).parent().parent().remove(); -->
+            <!-- var count=document.getElementById('count').innerText; -->
+            <!-- document.getElementById('count').innerText=count-1; -->
 // 		}
 	}
+    
+    function delhost(that){
+        var ip=$(that).parent().prev().prev().prev().prev().text();
+        var username=$(that).parent().prev().prev().prev().text();
+        console.log(ip, username)
+        $.ajax({
+            url: "/delhost/",
+            type: "post",
+            data: {"ip": ip, 'username': username},
+            headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+            success: function(status){
+                console.log(status);
+                if(status=='success'){
+                    $(that).parent().parent().remove();
+                }
+                else if(status=='failed'){
+                    alert('删除失败！')
+                }
+            }
+        });
+        <!-- $(that).parent().parent().remove(); -->
+    }
     
     $('#templateFile').change(function(){
         document.getElementById('uploadFileName').innerText=$('#templateFile').val();
@@ -243,6 +276,29 @@
             alert("批量添加中，稍后刷新页面！")
         }
     })
+    
+    $("#chk").click(function(e){
+        var ip=$(this).parent().prev().prev().prev().prev().text();
+        console.log(ip);
+        $.ajax({
+            url: "/chkhost/",
+            type: "post",
+            data: {'ip': ip},
+            headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+            success: function(status){
+                console.log(status);
+                if(status=="success"){
+                    $("#alert").css('display', 'block');
+                }
+            },
+        });
+    })
+
+    $(function(){
+        $(".close").click(function(){
+            $("#alert").hide();
+        });
+    });
     </script>
     
     <!-- END JAVASCRIPTS -->

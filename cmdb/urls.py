@@ -17,19 +17,25 @@ from django.conf.urls import url
 from django.contrib import admin
 
 from app01 import views
+import xadmin
 
 urlpatterns = [
     url(r'^$', views.asset),
-    url(r'^admin/', admin.site.urls),
-    url(r'^getone/(.*)/$', views.getOne, name='ip'),
+    url(r'^login/$', views.loginview),
+    url(r'^logout/$', views.logoutview),
+    url(r'^admin/', xadmin.site.urls),
+    url(r'^getone/$', views.getOne),
     url(r'^getall/$', views.getAll),
-    url(r'^search/$', views.search),
+    url(r'^search/asset/$', views.search_asset),
+    url(r'^search/host/$', views.search_host),
     url(r'^delasset/$', views.delasset),
+    url(r'^delhost/$', views.delhost),
     url(r'^host/$', views.host),
     url(r'^download/$', views.download),
     url(r'^upload/$', views.upload),
     url(r'^addhost/template/$', views.template_add),
-    # url(r'^addhost/manual/$', views.template_manual),
+    url(r'^addhost/manual/$', views.manual_add),
+    url(r'^chkhost/$', views.check_host),
     
     
     

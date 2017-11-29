@@ -4,16 +4,21 @@
 {% block content_title %}主机列表{% endblock %}
 
 {% block content %}
+
+<div class="alert alert-info" id="alert" style="display:none">
+<button type="button" class="close" id="close">&times;</button>
+    <strong>检测完成</strong>
+</div>
 <div class="margin pull-left">
     <button type="button" class="btn btn-default" href="#templateModal" data-toggle="modal">模版添加</button>
-    <button type="button" class="btn btn-default">手动添加</button>
+    <button type="button" class="btn btn-default" href="#manualModal" data-toggle="modal">手动添加</button>
     <button type="button" class="btn btn-default">导出</button>
     <h5 style="color:red">{{ error }}</h5>
 </div>
 
 <div class="pull-right">
-    <form class="pull-right" action="/search/" method="post">
-        {% csrf_token %}
+    <form class="pull-right" action="/search/host/" method="get">
+        <!-- {% csrf_token %} -->
         <input class="span9" type="input" name="search" placeholder="可模糊搜索，不区分大小写">
         <button class="btn btn-default" type="submit">搜索</button>
     </form>
@@ -27,7 +32,7 @@
       <th>IP地址</th>
       <th>认证用户</th>
       <th>主机状态</th>
-      <th>检测时间</th>
+      <th>添加时间</th>
       <th>操作</th>
     </tr>
     </thead>
@@ -51,7 +56,7 @@
         <td>{{ each.status }}</td>
         <td>{{ each.update_time|date:"Y-m-d H:i:s" }}</td>
         <td>
-            <button class="btn btn-default">检测</button>
+            <button class="btn btn-default" id="chk">检测</button>
             <button class="btn btn-default">改密</button>
             <button class="btn btn-default" onclick="delhost(this)">删除</button>
         </td>
@@ -82,6 +87,7 @@
     {% endif %}
 </div>
 
+<!-- 模版添加的模态对话框 -->
 <div id="templateModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="templateModalLabel" aria-hidden="true">
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
@@ -106,4 +112,31 @@
     <button class="btn" data-dismiss="modal" aria-hidden="true">关闭</button>
   </div>
 </div>
+
+<!-- 手动添加的模态对话框 -->
+<div id="manualModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="templateModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="templateModalLabel">手动添加</h3>
+  </div>
+  <div class="modal-body">
+        <form enctype="multipart/form-data" action="/addhost/manual/" method="post">
+            {% csrf_token %}
+            <h5>IP地址：</h5>
+            <input type="text" name="ip">
+            <h5>认证用户：</h5>
+            <input type="text" name="authuser">
+            <h5>认证密码：</h5>
+            <input type="password" name="passw0rd">
+            <br>
+            <button type="reset" class="btn btn-default">重置</button>
+            <button type="submit" class="btn btn-default">添加</button>
+        </form>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">关闭</button>
+  </div>
+</div>
+
+
 {% endblock %}

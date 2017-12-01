@@ -3,6 +3,7 @@
 import time
 import datetime
 import os
+import sys
 import xlrd
 import fileinput
 
@@ -87,10 +88,13 @@ def getOne(request):
             module_name='setup', pattern=ip, host_list='/etc/ansible/hosts_cmdb'
         )
         data = runner.run()
-        #print data
 
-        local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-        update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+        if data['dark'] == {} and data['contacted'] == {}:
+            update_time = u'未更新'
+        else:
+
+            local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+            update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
 
         for (host, result) in data['contacted'].items():
             if not 'failed' in result:
@@ -149,7 +153,7 @@ def getOne(request):
 #    if not 'failed' in data:
 #        #get_result = 'success'
 #	Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-##	print update_time
+    print update_time
     return HttpResponse(update_time)
 
 @login_required
@@ -278,13 +282,23 @@ def getAll(request):
 @login_required
 def delasset(request):
     status = None
+    content = None
+    filename = '/etc/ansible/hosts_cmdb'
     if request.method == 'POST':
         ip = request.POST['ip']
+        username = Host.objects.filter(ip=ip)
+        for user in username:
+            content = '%s ansible_ssh_user=%s' % (ip, user.username)
+            print content
         Asset.objects.filter(ip=ip).delete()
+        Host.objects.filter(ip=ip).delete()
         if not Asset.objects.filter(ip=ip):
             status = "success"
+            for eachline in fileinput.input(filename, backup='.bak', inplace=1):
+                eachline.replace(content, '')
         else:
             status = "failed"
+    
 
     return HttpResponse(status) 
 
@@ -304,9 +318,10 @@ def host(request):
 
 @login_required
 def download(request):
-    filename = 'media/template.xls'
+    filename = sys.path[0]+'/media/template.xls'
+    print filename
     if os.path.isfile(filename):
-        f =open(filename)
+        f = open(filename)
         data = f.read()
         f.close()
         #以下设置项是为了下载任意类型文件
@@ -318,26 +333,31 @@ def download(request):
 
 @login_required
 def upload(request):
+    path = sys.path[0]+'/upload'
     if request.method == "POST":    # 请求方法为POST时，进行处理  
         myFile =request.FILES.get("templateFile", None)    # 获取上传的文件，如果没有文件，则默认为None  
-        destination = open(os.path.join("upload",myFile.name), 'wb+')    # 打开特定的文件进行二进制的写操作  
+        destination = open(os.path.join(path, myFile.name), 'wb+')    # 打开特定的文件进行二进制的写操作  
 
         for chunk in myFile.chunks():      # 分块写入文件  
             destination.write(chunk) 
         destination.close() 
 
-        if not os.path.isfile('upload/template.xls'):
+        if not os.path.isfile(path+'/template.xls'):
    #     if not myFile: 
-            return render(request, 'host.html',{'error': u'模版文件上传失败！'})
+            return render(request, 'host.html',{'upload_info': u'模版文件上传失败！'})
+        else:
+            return render(request, 'host.html',{'upload_info': u'success'})
+
     return HttpResponseRedirect('/host/')
+    #return render(request, 'host.html',{'upload_info': u'success'})
 
 @login_required
 def template_add(request):
     flag = 0
     count = 5
-    filename = 'upload/template.xls'
+    filename = sys.path[0]+'/upload/template.xls'
     if request.method == 'POST':
-        while True:
+        while count>0:
             if os.path.isfile(filename):
                 data = xlrd.open_workbook(filename)
                 table = data.sheets()[0]
@@ -355,18 +375,20 @@ def template_add(request):
                         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
                         Host.objects.filter(ip=ip).update(username=username, status=info, update_time=update_time) 
             #info = hosts_file.create_file(request, ip, flag)
-                flag = 1
-                #print info
-            break
-        else:
-            print u'未发现上传的模版文件，剩余重试次数：%s' % count
-            count-=1
-            time.sleep(1)
-    return HttpResponse('')
+                    flag = 1
+                status = u'添加完成'
+                os.remove(filename)
+                break
+            else:
+                print u'未发现上传的模版文件，剩余重试次数：%s' % count
+                count-=1
+                time.sleep(1)
+                status = u'未发现上传的模版文件!'
+
+    return HttpResponse(status)
 
 @login_required
 def manual_add(request):
-    error = ''
     info = ''
     if request.method == 'POST':
         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
@@ -376,14 +398,17 @@ def manual_add(request):
         password = request.POST['passw0rd']
         
         if Host.objects.filter(ip=ip):
-            error = u'该IP已存在'
+            info = u'该IP已存在'
             Host.objects.filter(ip=ip).update(update_time=update_time)
+            return render(request, 'host.html', {'status_warning': info})
         else:
             info = hosts_ssh.do_ssh(request, ip, username, password, flag=1)
             print info
             Host.objects.create(ip=ip, username=username, status=info)
         
-    return render(request, 'host.html', {'error': info})
+            return render(request, 'host.html', {'status_success': info})
+    else:
+        return HttpResponseRedirect('/host/')
 
 @login_required
 def delhost(request):
@@ -446,9 +471,15 @@ def check_host(request):
         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
 
-        #for (host, result) in data['contacted'].items():
-        #    if not 'failed' in result:
-        status = 'success'
+        for (host, result) in data['contacted'].items():
+            if not 'failed' in result:
+                status = 'success'
+            else:
+                status = 'failed'
+
+        for (host, result) in data['dark'].items():
+            status = 'failed'+result
+
     return HttpResponse(status)
 
 @login_required

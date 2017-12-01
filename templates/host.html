@@ -5,9 +5,17 @@
 
 {% block content %}
 
-<div class="alert alert-info" id="alert" style="display:none">
-<button type="button" class="close" id="close">&times;</button>
-    <strong>检测完成</strong>
+<div class="alert alert-success" id="success" style="display:none">
+    <button type="button" class="close" id="close">&times;</button>
+    <strong id="status-success">{{ status_success }}</strong>
+</div>
+<div class="alert alert-warning" id="warning" style="display:none">
+    <button type="button" class="close" id="close">&times;</button>
+    <strong id="status-warning">{{ status_warning }}</strong>
+</div>
+<div class="alert alert-info" id="info" style="display:none">
+    <button type="button" class="close" id="close">&times;</button>
+    <strong id="status-info">{{ status_info }}</strong>
 </div>
 <div class="margin pull-left">
     <button type="button" class="btn btn-default" href="#templateModal" data-toggle="modal">模版添加</button>
@@ -56,7 +64,7 @@
         <td>{{ each.status }}</td>
         <td>{{ each.update_time|date:"Y-m-d H:i:s" }}</td>
         <td>
-            <button class="btn btn-default" id="chk">检测</button>
+            <button class="btn btn-default chk">检测</button>
             <button class="btn btn-default">改密</button>
             <button class="btn btn-default" onclick="delhost(this)">删除</button>
         </td>
@@ -97,14 +105,14 @@
     <div><h5>第一步：</h5><a href="/download/" class="a-upload">下载模版</a></div>
     <div>
         <h5>第二步：</h5>
-        <form enctype="multipart/form-data" action="/upload/" method="post">
+        <form enctype="multipart/form-data" action="/upload/" method="post" name="myForm">
             {% csrf_token %}
             <a href="javascript:;" class="a-upload">
                 <input type="file" name="templateFile" id="templateFile">上传模版
             </a>
             <span id="uploadFileName"></span>
             <h5>第三步：</h5>
-            <button type="submit" id="templateAdd" class="btn btn-default">开始添加</button>
+            <button id="templateAdd" class="btn btn-default">开始添加</button>
         </form>
     </div>
   </div>
@@ -118,6 +126,7 @@
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
     <h3 id="templateModalLabel">手动添加</h3>
+    <span id="upload_info" style="display:none">{{ upload_info }}</span>
   </div>
   <div class="modal-body">
         <form enctype="multipart/form-data" action="/addhost/manual/" method="post">

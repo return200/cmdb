@@ -186,10 +186,19 @@
             headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
             success:function(update_time){
                 console.log(update_time);
-                document.getElementById('update_time').innerText=update_time;
+                if(update_time!='未更新'){
+                    document.getElementById('update_time').innerText=update_time;
+                    $("#status-success").text('更新完成：'+update_time);
+                    $("#success").show();
+                }
+                else{
+                    $("#status-warning").text('更新失败');
+                    $("#warning").show(); 
+                }
             }
         });
-        alert("更新中，稍后刷新页面！")
+        $("#status-info").html('更新中，稍后 <strong><a href="/">刷新</a></strong> 页面！');
+        $("#info").show();
     })
     
     function renew_this(that){
@@ -202,10 +211,19 @@
             headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
             success:function(update_time){
                 console.log(update_time);
-                document.getElementById('update_time').innerText=update_time;
+                if(update_time!='未更新'){
+                    document.getElementById('update_time').innerText=update_time;
+                    $("#status-success").text('['+ip+'] 更新完成');
+                    $("#success").show();
+                }
+                else{
+                    $("#status-warning").text('['+ip+'] 更新失败');
+                    $("#warning").show();                    
+                }
             }
         });
-        alert("更新中，稍后刷新页面！")
+        $("#status-info").html('['+ip+'] 更新中，稍后 <strong><a href="/">刷新</a></strong> 页面！');
+        $("#info").show();
     }
     
 	function delasset(that){
@@ -221,12 +239,15 @@
                 success: function(status){
                     console.log(status);
                     if(status=='success'){
+                        $("#status-success").text('['+ip+'] 删除成功');
+                        $("#success").show();
                         var count=document.getElementById('count').innerText;
                         document.getElementById('count').innerText=count-1;
                         $(that).parent().parent().remove();
                     }
                     else{
-                        alert('删除失败！')
+                        $("$status-warning").text('['+ip+'] 删除成功');
+                        $("#warning").show();
                     }
                 }
 			});
@@ -249,35 +270,64 @@
                 console.log(status);
                 if(status=='success'){
                     $(that).parent().parent().remove();
+                    $("#status-success").text('['+ip+'] 删除成功');
+                    $("#success").show();
                 }
                 else if(status=='failed'){
-                    alert('删除失败！')
+                    $("#status-warning").text('['+ip+'] 删除失败');
+                    $("#warning").show();
                 }
             }
         });
-        <!-- $(that).parent().parent().remove(); -->
     }
     
     $('#templateFile').change(function(){
         document.getElementById('uploadFileName').innerText=$('#templateFile').val();
     })
     
+    <!-- 上传文件的同时执行ajax开始 -->
+    <!-- 思路：前端设置隐藏字段，用来获取上传状态。先执行上传，后台返回上传状态。添加自执行函数，判断当上传状态为success时则执行ajax。 -->
     $('#templateAdd').click(function(){
         if(document.getElementById('templateFile').value==""){
             alert('请上传模版！');
             return false;
         }
         else{
-            $.ajax({
-                url: "/addhost/template/",
-                type: "post",
-                headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
-            })
-            alert("批量添加中，稍后刷新页面！")
+            myForm.submit();
         }
     })
     
-    $("#chk").click(function(e){
+    $(function(){
+        if($("#upload_info").text()!=''){
+            if($("#upload_info").text()=='success'){
+                $("#status-info").html('批量更新中，稍后 <strong><a href="/host/">刷新</a></strong> 页面！');
+                $("#info").show();
+                $.ajax({
+                    url: "/addhost/template/",
+                    type: "post",
+                    headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+                    success: function(status){
+                        if(status=='添加完成'){
+                            $("#status-success").text('批量添加完成');
+                            $("#success").show();
+                        }
+                        else{
+                            $("#status-warning").text('批量添加失败');
+                            $("#warning").show();
+                        }
+                    }
+                })
+                $("#upload_info").text('');
+            }
+            else{
+                $("#status-warning").text('模版文件上传失败');
+                $("#warning").show();
+            }
+        }
+    })    
+    <!-- 上传文件的同时执行ajax结束 -->
+    
+    $(".chk").click(function(e){
         var ip=$(this).parent().prev().prev().prev().prev().text();
         console.log(ip);
         $.ajax({
@@ -286,9 +336,15 @@
             data: {'ip': ip},
             headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
             success: function(status){
-                console.log(status);
-                if(status=="success"){
-                    $("#alert").css('display', 'block');
+                if(status=='success'){
+                    console.log(status);
+                    $("#status-success").text('['+ip+'] 检测完成：'+status);
+                    $("#success").css('display', 'block');
+                }
+                else{
+                    console.log(status);
+                    $("#status-warning").text('['+ip+'] 检测完成：'+status);
+                    $("#warning").css('display', 'block');
                 }
             },
         });
@@ -296,9 +352,26 @@
 
     $(function(){
         $(".close").click(function(){
-            $("#alert").hide();
+            $("#info").hide();
+            $("#success").hide();
+            $("#warning").hide();
         });
     });
+    
+    $(function(){
+        var length_info=$("#status-info").text().length;
+        var length_warning=$("#status-warning").text().length;
+        var length_success=$("#status-success").text().length;
+        if(length_info>0){
+            $("#status-info").parent().show();
+        }
+        else if(length_warning>0){
+            $("#status-warning").parent().show();
+        }
+        else if(length_success>0){
+            $("#status-success").parent().show();
+        }
+    })
     </script>
     
     <!-- END JAVASCRIPTS -->

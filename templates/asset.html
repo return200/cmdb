@@ -4,6 +4,20 @@
 {% block content_title %}资产列表{% endblock %}
 
 {% block content %}
+
+<div class="alert alert-success" id="success" style="display:none">
+    <button type="button" class="close" id="close">&times;</button>
+    <strong id="status-success">{{ status_success }}</strong>
+</div>
+<div class="alert alert-warning" id="warning" style="display:none">
+    <button type="button" class="close" id="close">&times;</button>
+    <strong id="status-warning">{{ statuss_warning }}</strong>
+</div>
+<div class="alert alert-info" id="info" style="display:none">
+    <button type="button" class="close" id="close">&times;</button>
+    <strong id="status-info">{{ statuss_info }}</strong>
+</div>
+
 <div class="margin">
     <button type="button" class="btn pull-left" id="renew">批量更新</button>
     <form class="pull-right" action="/search/asset/" method="get">

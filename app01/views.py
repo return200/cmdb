@@ -293,13 +293,11 @@ def delasset(request):
         Asset.objects.filter(ip=ip).delete()
         Host.objects.filter(ip=ip).delete()
         if not Asset.objects.filter(ip=ip):
+            os.system("sed -i '/"+content+"/d' "+filename)
             status = "success"
-            for eachline in fileinput.input(filename, backup='.bak', inplace=1):
-                eachline.replace(content, '')
         else:
             status = "failed"
     
-
     return HttpResponse(status) 
 
 @login_required
@@ -422,15 +420,16 @@ def manual_add(request):
 @login_required
 def delhost(request):
     status = None
+    filename = '/etc/ansible/hosts_cmdb'
     if request.method == 'POST':
         ip = request.POST['ip']
         username = request.POST['username']
         content = '%s ansible_ssh_user=%s' % (ip, username)
+        print content
 
         Host.objects.filter(ip=ip).delete()
         if not Host.objects.filter(ip=ip):
-            for eachline in fileinput.input('/etc/ansible/hosts_cmdb', backup='.bak', inplace=1):
-                eachline.replace(content, '')
+            os.system("sed -i '/"+content+"/d' "+filename)
             status = "success"
         else:
             status = "failed"

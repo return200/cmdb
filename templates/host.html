@@ -20,7 +20,7 @@
 <div class="margin pull-left">
     <button type="button" class="btn btn-default" href="#templateModal" data-toggle="modal">模版添加</button>
     <button type="button" class="btn btn-default" href="#manualModal" data-toggle="modal">手动添加</button>
-    <button type="button" class="btn btn-default">导出</button>
+    <button type="button" class="btn btn-default" disabled>导出</button>
     <h5 style="color:red">{{ error }}</h5>
 </div>
 
@@ -65,7 +65,7 @@
         <td>{{ each.update_time|date:"Y-m-d H:i:s" }}</td>
         <td>
             <button class="btn btn-default chk">检测</button>
-            <button class="btn btn-default">改密</button>
+            <button class="btn btn-default" disabled>改密</button>
             <button class="btn btn-default" onclick="delhost(this)">删除</button>
         </td>
     </tr>

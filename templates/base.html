@@ -300,7 +300,7 @@
     $(function(){
         if($("#upload_info").text()!=''){
             if($("#upload_info").text()=='success'){
-                $("#status-info").html('批量更新中，稍后 <strong><a href="/host/">刷新</a></strong> 页面！');
+                $("#status-info").html('批量添加中，稍后 <strong><a href="/host/">刷新</a></strong> 页面！');
                 $("#info").show();
                 $.ajax({
                     url: "/addhost/template/",

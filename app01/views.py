@@ -5,7 +5,6 @@ import datetime
 import os
 import sys
 import xlrd
-import fileinput
 
 from django.shortcuts import render
 from django.http.response import HttpResponse, HttpResponseRedirect
@@ -54,7 +53,6 @@ def search_asset(request):
         Q(mem__icontains=keyword)|Q(cpu__icontains=keyword)|
         Q(disk__icontains=keyword)
     )
-    print "search_info %s" % type(search_info)
 
     count = search_info.count()
 
@@ -114,6 +112,7 @@ def getOne(request):
                     if data['contacted'][ip]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
                         disk = data['contacted'][ip]['ansible_facts']['ansible_devices'][partation]['size']
             
+                print '\n--------------------\ngetOne:\n'
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                 
@@ -132,6 +131,8 @@ def getOne(request):
                 disk = 'N/A'
         
                 Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                print '\n--------------------\ngetOne:\n'
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
 
         for (host, result) in data['dark'].items():
@@ -147,13 +148,10 @@ def getOne(request):
             disk = 'N/A'
         
             Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+            print '\n--------------------\ngetOne:\n'
+            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
             print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
 
-
-#    if not 'failed' in data:
-#        #get_result = 'success'
-#	Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-    print update_time
     return HttpResponse(update_time)
 
 @login_required
@@ -190,6 +188,8 @@ def getAll(request):
                 for partation in device:
                     if data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
                         disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
+                print '\n--------------------\ngetAll:\n'
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                 if not Asset.objects.filter(ip=ip):
                     Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
@@ -216,6 +216,8 @@ def getAll(request):
                     Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
                 else:
                     Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                print '\n--------------------\ngetAll:\n'
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
 
         for (host, result) in data['dark'].items():
@@ -237,6 +239,8 @@ def getAll(request):
                 Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
             else:
                 Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+            print '\n--------------------\ngetAll:\n'
+            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
             print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
 
     #    if not 'failed' in data:
@@ -289,7 +293,6 @@ def delasset(request):
         username = Host.objects.filter(ip=ip)
         for user in username:
             content = '%s ansible_ssh_user=%s' % (ip, user.username)
-            print content
         Asset.objects.filter(ip=ip).delete()
         Host.objects.filter(ip=ip).delete()
         if not Asset.objects.filter(ip=ip):
@@ -297,7 +300,10 @@ def delasset(request):
             status = "success"
         else:
             status = "failed"
-    
+        print '\n--------------------\ndelasset:\n'
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
+        print '删除%s，结果:%s' %(content, status)
+
     return HttpResponse(status) 
 
 @login_required
@@ -317,7 +323,6 @@ def host(request):
 @login_required
 def download(request):
     filename = sys.path[0]+'/media/template.xls'
-    print filename
     if os.path.isfile(filename):
         f = open(filename)
         data = f.read()
@@ -332,22 +337,20 @@ def download(request):
 @login_required
 def upload(request):
     path = sys.path[0]+'/upload'
-    if request.method == "POST":    # 请求方法为POST时，进行处理  
-        myFile =request.FILES.get("templateFile", None)    # 获取上传的文件，如果没有文件，则默认为None  
-        destination = open(os.path.join(path, myFile.name), 'wb+')    # 打开特定的文件进行二进制的写操作  
+    if request.method == "POST":
+        myFile =request.FILES.get("templateFile", None)
+        destination = open(os.path.join(path, myFile.name), 'wb+')
 
-        for chunk in myFile.chunks():      # 分块写入文件  
+        for chunk in myFile.chunks():
             destination.write(chunk) 
         destination.close() 
 
         if not os.path.isfile(path+'/template.xls'):
-   #     if not myFile: 
             return render(request, 'host.html',{'upload_info': u'模版文件上传失败！'})
         else:
             return render(request, 'host.html',{'upload_info': u'success'})
 
     return HttpResponseRedirect('/host/')
-    #return render(request, 'host.html',{'upload_info': u'success'})
 
 @login_required
 def template_add(request):
@@ -360,12 +363,14 @@ def template_add(request):
                 data = xlrd.open_workbook(filename)
                 table = data.sheets()[0]
                 nrows = table.nrows
+                print '\n--------------------\ntemplate_add:\n'
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 for i in range(1, nrows):
                     ip = table.row_values(i)[0]
                     username = table.row_values(i)[1]
                     password = table.row_values(i)[2]
                     info = hosts_ssh.do_ssh(request, ip, username, password, flag)
-                    print info
+                    print '模版添加%s，认证用户：%s，结果：%s' %(ip, username, info)
                     if not Host.objects.filter(ip=ip):
                         Host.objects.create(ip=ip, username=username, status=info)
                     else:
@@ -375,9 +380,12 @@ def template_add(request):
             #info = hosts_file.create_file(request, ip, flag)
                     flag = 1
                 status = u'添加完成'
+                print status
                 os.remove(filename)
                 break
             else:
+                print '\n--------------------\ntemplate_add:\n'
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u'未发现上传的模版文件，剩余重试次数：%s' % count
                 count-=1
                 time.sleep(1)
@@ -398,20 +406,23 @@ def manual_add(request):
         if Host.objects.filter(ip=ip):
             info = u'该IP已存在'
             Host.objects.filter(ip=ip).update(update_time=update_time)
-            print info
-            print '--------------------'
+            print '\n--------------------\nmanual_add:\n'
+            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
+            print '手动添加%s，用户名：%s，结果:%s' %(ip, username, info)
             return render(request, 'host.html', {'status_warning': info})
         else:
             info = hosts_ssh.do_ssh(request, ip, username, password, flag=1)
             if info == '成功':
                 Host.objects.create(ip=ip, username=username, status=info)    
-                print info
-                print '--------------------'
+                print '\n--------------------\nmanual_add:\n'
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
+                print '手动添加%s，用户名：%s，结果:%s' %(ip, username, info)
                 return render(request, 'host.html', {'status_success': info})
             else:
                 Host.objects.create(ip=ip, username=username, status=info)
-                print info
-                print '--------------------'
+                print '\n--------------------\nmanual_add:\n'
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
+                print '手动添加%s，用户名：%s，结果:%s' %(ip, username, info)
                 return render(request, 'host.html', {'status_warning': info})
         
     else:
@@ -425,7 +436,6 @@ def delhost(request):
         ip = request.POST['ip']
         username = request.POST['username']
         content = '%s ansible_ssh_user=%s' % (ip, username)
-        print content
 
         Host.objects.filter(ip=ip).delete()
         if not Host.objects.filter(ip=ip):
@@ -433,6 +443,9 @@ def delhost(request):
             status = "success"
         else:
             status = "failed"
+        print '\n--------------------\ndelhost:\n'
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
+        print '删除%s，结果:%s' %(content, status)
 
     return HttpResponse(status)
     
@@ -488,6 +501,10 @@ def check_host(request):
         for (host, result) in data['dark'].items():
             status = 'failed: '+result['msg']
 
+        print '\n--------------------\ncheck_host:\n'
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
+        print '检测%s，结果：%s' % (ip, status)
+
     return HttpResponse(status)
 
 @login_required
@@ -504,7 +521,6 @@ def loginview(request):
         password = request.POST['passw0rd']
         url = request.POST['next']
         error = u'用户名或密码错误'
-        print dir(auth)
         user = auth.authenticate(username=username, password=password)
         if user is not None and user.is_active:
             login(request, user)

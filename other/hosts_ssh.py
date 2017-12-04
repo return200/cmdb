@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 
+import time
 import os,sys
 import subprocess
 
@@ -12,13 +13,17 @@ def do_ssh(request, ip, username, password, flag):
     script = sys.path[0]+'/other/auto_ssh.sh'
     if os.path.isfile(script):
         chk_info = chk_ping.chk(request, ip, username, password)
-        print chk_info
+        print '\n--------------------\nchk_ping:\n'
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        print '检测%s，认证用户：%s，结果：%s' % (ip, username, chk_info)
         if chk_info == 'need':
             cmd=' '.join([script, username, ip, password])
             #print 'do_ssh cmd:%s' % (cmd)
             run = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             (output, err) = run.communicate()
-            print 'output: %s ,err:%s' % (output,err)
+            #print '\n--------------------\ndo_ssh:\n'
+            #print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+            #print 'output: %s ,err:%s' % (output,err)
             if 'Permission denied' in output:
                 info = '用户名或密码错误'
             elif 'Connection refused' in output:

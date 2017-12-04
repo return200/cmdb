@@ -400,13 +400,22 @@ def manual_add(request):
         if Host.objects.filter(ip=ip):
             info = u'该IP已存在'
             Host.objects.filter(ip=ip).update(update_time=update_time)
+            print info
+            print '--------------------'
             return render(request, 'host.html', {'status_warning': info})
         else:
             info = hosts_ssh.do_ssh(request, ip, username, password, flag=1)
-            print info
-            Host.objects.create(ip=ip, username=username, status=info)
+            if info == '成功':
+                Host.objects.create(ip=ip, username=username, status=info)    
+                print info
+                print '--------------------'
+                return render(request, 'host.html', {'status_success': info})
+            else:
+                Host.objects.create(ip=ip, username=username, status=info)
+                print info
+                print '--------------------'
+                return render(request, 'host.html', {'status_warning': info})
         
-            return render(request, 'host.html', {'status_success': info})
     else:
         return HttpResponseRedirect('/host/')
 
@@ -478,7 +487,7 @@ def check_host(request):
                 status = 'failed'
 
         for (host, result) in data['dark'].items():
-            status = 'failed'+result
+            status = 'failed: '+result['msg']
 
     return HttpResponse(status)
 

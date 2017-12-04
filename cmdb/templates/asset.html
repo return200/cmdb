@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}服务器列表{% endblock %}
+
+{% block content_title %}服务器列表{% endblock %}
+
+{% block content %}
+<div class="margin">
+    <button type="button" class="btn pull-left">批量更新</button>
+    <form class="pull-right" action="/search/" method="post">
+        {% csrf_token %}
+        <input class="span9" type="input" name="search" placeholder="可模糊搜索，不区分大小写">
+        <button class="btn btn-default" type="submit">搜索</button>
+    </form>
+</div>
+{{ get_result }}
+<table class="table table-hover table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>IP地址</th>
+      <th>主机名</th>
+      <th>操作系统</th>
+      <th>CPU型号</th>
+      <th>CPU</th>
+      <th>内存</th>
+      <th>硬盘</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr id="addr">
+        <td>192.168.2.11</td>
+        <td>node1</td>
+        <td>centos 6.5 centos 6.5vcentos 6.5</td>
+        <td>Xen E6 Xen E6 Xen E6</td>
+        <td>1核1线程 x 1</td>
+        <td>988 MB</td>
+        <td>20 GB</td>
+        <td>
+            <button class="btn btn-default">删除</button>
+            <button class="btn btn-default">更新</button>
+        </td>
+    </tr>
+    
+    {% for each in info %}
+    <tr>
+        <td>{{ each.ip }}</td>
+        <td>{{ each.hostname }}</td>
+        <td>{{ each.os }}</td>
+        <td>{{ each.cpu_model }}</td>
+        <td>{{ each.cpu }}</td>
+        <td>{{ each.mem }} MB</td>
+        <td>{{ each.disk }}</td>
+        <td>
+            <button class="btn btn-default">删除</button>
+            <button class="btn btn-default">更新</button> 
+        </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

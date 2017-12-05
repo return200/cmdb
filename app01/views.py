@@ -250,7 +250,7 @@ def getAll(request):
 
         return HttpResponse(update_time)
     else:
-        update_time = u'host文件不存在'
+        update_time = u'未更新'
 
         return HttpResponse(update_time)
 

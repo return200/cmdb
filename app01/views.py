@@ -97,7 +97,7 @@ def getOne(request):
         for (host, result) in data['contacted'].items():
             if not 'failed' in result:
                 hostname = data['contacted'][ip]['ansible_facts']['ansible_hostname']
-                os = data['contacted'][ip]['ansible_facts']['ansible_lsb']['description']
+                system = data['contacted'][ip]['ansible_facts']['ansible_lsb']['description']
                 cpu_core = data['contacted'][ip]['ansible_facts']['ansible_processor_cores']
                 #单颗的核数
                 cpu_thread = data['contacted'][ip]['ansible_facts']['ansible_processor_threads_per_core']
@@ -116,12 +116,12 @@ def getOne(request):
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                 
-                Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                Asset.objects.filter(ip=ip).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
         
             elif 'failed' in result:
                 ip = host
                 hostname = 'N/A'
-                os = 'N/A'
+                system = 'N/A'
                 cpu_core = 'N/A'
                 cpu_thread = 'N/A'
                 cpu_count = 'N/A'
@@ -130,7 +130,7 @@ def getOne(request):
                 mem = 'N/A'
                 disk = 'N/A'
         
-                Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                Asset.objects.filter(ip=ip).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
                 print '\n--------------------\ngetOne:'
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
@@ -138,7 +138,7 @@ def getOne(request):
         for (host, result) in data['dark'].items():
             ip = host
             hostname = 'N/A'
-            os = 'N/A'
+            system = 'N/A'
             cpu_core = 'N/A'
             cpu_thread = 'N/A'
             cpu_count = 'N/A'
@@ -147,7 +147,7 @@ def getOne(request):
             mem = 'N/A'
             disk = 'N/A'
         
-            Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+            Asset.objects.filter(ip=ip).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
             print '\n--------------------\ngetOne:'
             print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
             print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
@@ -176,7 +176,7 @@ def getAll(request):
                 if not 'failed' in result:
                     ip = data['contacted'][host]['ansible_facts']['ansible_default_ipv4']['address']
                     hostname = data['contacted'][host]['ansible_facts']['ansible_hostname']
-                    os = data['contacted'][host]['ansible_facts']['ansible_lsb']['description']
+                    system = data['contacted'][host]['ansible_facts']['ansible_lsb']['description']
                     cpu_core = data['contacted'][host]['ansible_facts']['ansible_processor_cores']
                     #单颗的核数
                     cpu_thread = data['contacted'][host]['ansible_facts']['ansible_processor_threads_per_core']
@@ -192,9 +192,9 @@ def getAll(request):
                             disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
                     print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                     if not Asset.objects.filter(ip=ip):
-                        Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+                        Asset.objects.create(ip=ip, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
                     else:
-                        Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                        Asset.objects.filter(ip=ip).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
     
             for (host, result) in data['contacted'].items():
                 local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
@@ -203,7 +203,7 @@ def getAll(request):
                 if 'failed' in result:
                     ip = host
                     hostname = 'N/A'
-                    os = 'N/A'
+                    system = 'N/A'
                     cpu_core = 'N/A'
                     cpu_thread = 'N/A'
                     cpu_count = 'N/A'
@@ -213,9 +213,9 @@ def getAll(request):
                     disk = 'N/A'
     
                     if not Asset.objects.filter(ip=ip):
-                        Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+                        Asset.objects.create(ip=ip, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
                     else:
-                        Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                        Asset.objects.filter(ip=ip).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
                     print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
     
             for (host, result) in data['dark'].items():
@@ -224,7 +224,7 @@ def getAll(request):
     
                 ip = host
                 hostname = 'N/A'
-                os = 'N/A'
+                system = 'N/A'
                 cpu_core = 'N/A'
                 cpu_thread = 'N/A'
                 cpu_count = 'N/A'
@@ -234,9 +234,9 @@ def getAll(request):
                 disk = 'N/A'
          
                 if not Asset.objects.filter(ip=ip):
-                    Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+                    Asset.objects.create(ip=ip, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
                 else:
-                    Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                    Asset.objects.filter(ip=ip).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
     
             insert_time = Asset.objects.order_by('-update_time')[:1]

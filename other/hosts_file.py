@@ -9,17 +9,17 @@ def create_file(request, ip, username, flag, info):
     f = file(host_file, 'a+')
 
     if flag == 0 and info == '成功':
-        f.truncate()    #清空文件
+        f.truncate()
         f.writelines(item)
         f.close()
     elif flag == 0 and info != '成功':
-	f.truncate()    #清空文件
+	f.truncate()
 	f.close()
     elif flag ==1 and info == '成功':
         f.writelines(item)
         f.close()
 
-    print '\n--------------------\ncreate_file:\n'
+    print '\n--------------------\ncreate_file:'
     print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
     print '添加 %s 到 %s' % (item, host_file)
 

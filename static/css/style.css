@@ -122,7 +122,7 @@ Close icon used for modal dialog and other UI element close buttons
   width: 9px;
   height: 9px;
   background-repeat: no-repeat !important;
-  background-image: url("../image/remove-icon-small.png") !important;
+//  background-image: url("../image/remove-icon-small.png") !important;
 }
 
 /***

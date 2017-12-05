@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}主机列表{% endblock %}
+{% block title %}国药CMDB—主机列表{% endblock %}
 
 {% block content_title %}主机列表{% endblock %}
 
@@ -102,7 +102,10 @@
     <h3 id="templateModalLabel">模版添加</h3>
   </div>
   <div class="modal-body">
-    <div><h5>第一步：</h5><a href="/download/" class="a-upload">下载模版</a></div>
+    <div>
+        <h5>第一步：</h5><a href="/download/" class="a-upload">下载模版</a>
+        <span style="color:red">模版文件名为<code>template.xls</code>，不可改名，已有则无需再下载。</span>
+    </div>
     <div>
         <h5>第二步：</h5>
         <form enctype="multipart/form-data" action="/upload/" method="post" name="myForm">

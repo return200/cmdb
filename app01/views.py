@@ -112,7 +112,7 @@ def getOne(request):
                     if data['contacted'][ip]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
                         disk = data['contacted'][ip]['ansible_facts']['ansible_devices'][partation]['size']
             
-                print '\n--------------------\ngetOne:\n'
+                print '\n--------------------\ngetOne:'
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                 
@@ -131,7 +131,7 @@ def getOne(request):
                 disk = 'N/A'
         
                 Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-                print '\n--------------------\ngetOne:\n'
+                print '\n--------------------\ngetOne:'
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
 
@@ -148,7 +148,7 @@ def getOne(request):
             disk = 'N/A'
         
             Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-            print '\n--------------------\ngetOne:\n'
+            print '\n--------------------\ngetOne:'
             print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
             print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
 
@@ -167,6 +167,8 @@ def getAll(request):
 
         Asset.objects.all().delete()
 
+        print '\n--------------------\ngetAll:'
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
         for (host, result) in data['contacted'].items():
             local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
             update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
@@ -188,8 +190,6 @@ def getAll(request):
                 for partation in device:
                     if data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
                         disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
-                print '\n--------------------\ngetAll:\n'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                 if not Asset.objects.filter(ip=ip):
                     Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
@@ -216,8 +216,6 @@ def getAll(request):
                     Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
                 else:
                     Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-                print '\n--------------------\ngetAll:\n'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
 
         for (host, result) in data['dark'].items():
@@ -239,38 +237,7 @@ def getAll(request):
                 Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
             else:
                 Asset.objects.filter(ip=ip).update(hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-            print '\n--------------------\ngetAll:\n'
-            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
             print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-
-    #    if not 'failed' in data:
-    #        Asset.objects.all().delete()
-            
-    #        operation_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-    #        print operation_time
-    #    
-    #        for each in data['contacted'].keys():
-    #            #ip_all = data['contacted'][each]['ansible_facts']['ansible_all_ipv4_addresses']
-    #            ip = data['contacted'][each]['ansible_facts']['ansible_default_ipv4']['address']
-    #            hostname = data['contacted'][each]['ansible_facts']['ansible_hostname']
-    #            os = data['contacted'][each]['ansible_facts']['ansible_lsb']['description']
-    #            cpu_core = data['contacted'][each]['ansible_facts']['ansible_processor_cores']
-    #            #单颗的核数
-    #            cpu_thread = data['contacted'][each]['ansible_facts']['ansible_processor_threads_per_core']
-    #            #单核的线程数
-    #            cpu_count = data['contacted'][each]['ansible_facts']['ansible_processor_count']
-    #            #颗数
-    #            cpu = "%s核%s线程 x %s" %(cpu_core, cpu_thread, cpu_count)
-    #            cpu_model = data['contacted'][each]['ansible_facts']['ansible_processor'][-1]
-    #            mem = data['contacted'][each]['ansible_facts']['ansible_memtotal_mb']
-    #            device = data['contacted'][each]['ansible_facts']['ansible_devices'].keys()
-    #            for partation in device:
-    #                if data['contacted'][each]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
-    #                    disk = data['contacted'][each]['ansible_facts']['ansible_devices'][partation]['size']
-    #            print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip, hostname, os, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-    #            Asset.objects.create(ip=ip, hostname=hostname, os=os, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
-    #    else:
-    #        print data
 
         insert_time = Asset.objects.order_by('-update_time')[:1]
 
@@ -300,7 +267,7 @@ def delasset(request):
             status = "success"
         else:
             status = "failed"
-        print '\n--------------------\ndelasset:\n'
+        print '\n--------------------\ndelasset:'
         print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
         print '删除%s，结果:%s' %(content, status)
 
@@ -314,7 +281,7 @@ def host(request):
         page = request.GET.get('page', 1)
     except PageNotAnInteger:
         page = 1
-    # Provide Paginator with the request object for complete querystring generation
+
     p = Paginator(all_info, 10, request=request)
     info = p.page(page)
 
@@ -327,7 +294,6 @@ def download(request):
         f = open(filename)
         data = f.read()
         f.close()
-        #以下设置项是为了下载任意类型文件
         response = HttpResponse(data) 
         response['Content-Disposition'] = 'attachment; filename=%s' % 'template.xls'
         return response
@@ -363,7 +329,7 @@ def template_add(request):
                 data = xlrd.open_workbook(filename)
                 table = data.sheets()[0]
                 nrows = table.nrows
-                print '\n--------------------\ntemplate_add:\n'
+                print '\n--------------------\ntemplate_add:'
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 for i in range(1, nrows):
                     ip = table.row_values(i)[0]
@@ -377,14 +343,13 @@ def template_add(request):
                         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
                         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
                         Host.objects.filter(ip=ip).update(username=username, status=info, update_time=update_time) 
-            #info = hosts_file.create_file(request, ip, flag)
                     flag = 1
                 status = u'添加完成'
                 print status
                 os.remove(filename)
                 break
             else:
-                print '\n--------------------\ntemplate_add:\n'
+                print '\n--------------------\ntemplate_add:'
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u'未发现上传的模版文件，剩余重试次数：%s' % count
                 count-=1
@@ -406,7 +371,7 @@ def manual_add(request):
         if Host.objects.filter(ip=ip):
             info = u'该IP已存在'
             Host.objects.filter(ip=ip).update(update_time=update_time)
-            print '\n--------------------\nmanual_add:\n'
+            print '\n--------------------\nmanual_add:'
             print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
             print '手动添加%s，用户名：%s，结果:%s' %(ip, username, info)
             return render(request, 'host.html', {'status_warning': info})
@@ -414,13 +379,13 @@ def manual_add(request):
             info = hosts_ssh.do_ssh(request, ip, username, password, flag=1)
             if info == '成功':
                 Host.objects.create(ip=ip, username=username, status=info)    
-                print '\n--------------------\nmanual_add:\n'
+                print '\n--------------------\nmanual_add:'
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print '手动添加%s，用户名：%s，结果:%s' %(ip, username, info)
                 return render(request, 'host.html', {'status_success': info})
             else:
                 Host.objects.create(ip=ip, username=username, status=info)
-                print '\n--------------------\nmanual_add:\n'
+                print '\n--------------------\nmanual_add:'
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print '手动添加%s，用户名：%s，结果:%s' %(ip, username, info)
                 return render(request, 'host.html', {'status_warning': info})
@@ -443,7 +408,7 @@ def delhost(request):
             status = "success"
         else:
             status = "failed"
-        print '\n--------------------\ndelhost:\n'
+        print '\n--------------------\ndelhost:'
         print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
         print '删除%s，结果:%s' %(content, status)
 
@@ -451,29 +416,19 @@ def delhost(request):
     
 @login_required
 def search_host(request):
-#    keyword = request.POST['search']
     keyword = request.GET['search']
     search_info = Host.objects.filter(
         Q(ip__icontains=keyword)|Q(username__icontains=keyword)|
         Q(status__icontains=keyword)
     )
-#    print "search_info %s" % search_info
 
     count = search_info.count()
 
-#    insert_time = Asset.objects.order_by('-update_time')[:1]
-#    if insert_time:
-#        for update_time in insert_time:
-#            update_time = update_time.update_time
-##            print update_time
-#    else:
-#        update_time = u'未更新'
-#
     try:
         page = request.GET.get('page', 1)
     except PageNotAnInteger:
         page = 1
-    # Provide Paginator with the request object for complete querystring generation
+
     p = Paginator(search_info, 10, request=request)
     info = p.page(page)
 
@@ -501,7 +456,7 @@ def check_host(request):
         for (host, result) in data['dark'].items():
             status = 'failed: '+result['msg']
 
-        print '\n--------------------\ncheck_host:\n'
+        print '\n--------------------\ncheck_host:'
         print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
         print '检测%s，结果：%s' % (ip, status)
 

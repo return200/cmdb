@@ -9,7 +9,8 @@ import datetime, time
 # Create your models here.
 
 class Asset(models.Model):
-    ip = models.GenericIPAddressField(max_length=50, verbose_name=u'IP地址')
+    ip_pub = models.GenericIPAddressField(max_length=50, verbose_name=u'外网IP地址')
+    #ip_prv = models.GenericIPAddressField(max_length=50, verbose_name=u'内网IP地址')
     hostname = models.CharField(max_length=20, verbose_name=u'主机名')
     os = models.CharField(max_length=50, verbose_name=u'操作系统')
     cpu_model = models.CharField(max_length=50, verbose_name=u'CPU型号')
@@ -21,13 +22,14 @@ class Asset(models.Model):
     class Meta:
         verbose_name = u"资产信息表"
 	verbose_name_plural = verbose_name
-	ordering = ['ip']
+	ordering = ['ip_pub']
     
     def __unicode__(self):
-        return self.ip
+        return self.ip_pub
 
 class Host(models.Model):
-    ip = models.GenericIPAddressField(max_length=20, verbose_name=u'IP地址')
+    ip_pub = models.GenericIPAddressField(max_length=20, verbose_name=u'外网IP地址')
+    ip_prv = models.GenericIPAddressField(max_length=20, null=True, blank=True, verbose_name=u'内网IP地址')
     username = models.CharField(max_length=20, verbose_name=u'用户名')
     add_time = models.DateTimeField(auto_now_add=True, verbose_name=u'添加时间')
     update_time = models.DateTimeField(auto_now=True, verbose_name=u'上次检测时间')
@@ -36,7 +38,7 @@ class Host(models.Model):
     class Meta:
         verbose_name = u"主机信息表"
         verbose_name_plural = verbose_name
-        ordering = ['ip']
+        ordering = ['ip_pub']
 
     def __unicode__(self):
-        return self.ip
+        return self.ip_pub

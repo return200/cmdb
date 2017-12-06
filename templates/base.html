@@ -202,51 +202,51 @@
     })
     
     function renew_this(that){
-        var ip=$(that).parent().prev().prev().prev().prev().prev().prev().prev().text();
-        console.log(ip);
+        var ip_pub=$(that).parent().prev().prev().prev().prev().prev().prev().prev().text();
+        console.log(ip_pub);
         $.ajax({
             url: "/getone/",
             type: "post",
-            data: {"ip":ip},
+            data: {"ip_pub":ip_pub},
             headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
             success:function(update_time){
                 console.log(update_time);
                 if(update_time!='未更新'){
                     document.getElementById('update_time').innerText=update_time;
-                    $("#status-success").text('['+ip+'] 更新完成');
+                    $("#status-success").text('['+ip_pub+'] 更新完成');
                     $("#success").show();
                 }
                 else{
-                    $("#status-warning").text('['+ip+'] 更新失败');
+                    $("#status-warning").text('['+ip_pub+'] 更新失败');
                     $("#warning").show();                    
                 }
             }
         });
-        $("#status-info").html('['+ip+'] 更新中，稍后 <strong><a href="/">刷新</a></strong> 页面！');
+        $("#status-info").html('['+ip_pub+'] 更新中，稍后 <strong><a href="/">刷新</a></strong> 页面！');
         $("#info").show();
     }
     
 	function delasset(that){
-		var ip=$(that).parent().prev().prev().prev().prev().prev().prev().prev().text();
-		console.log(ip)
+		var ip_pub=$(that).parent().prev().prev().prev().prev().prev().prev().prev().text();
+		console.log(ip_pub)
 // 		var action=confirm("删除组 ["+name+"] ？");
 // 		if(action==true){
 			$.ajax({
 				url: "/delasset/",
 				type: "post",
-				data: {"ip":ip},
+				data: {"ip_pub":ip_pub},
 				headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
                 success: function(status){
                     console.log(status);
                     if(status=='success'){
-                        $("#status-success").text('['+ip+'] 删除成功');
+                        $("#status-success").text('['+ip_pub+'] 删除成功');
                         $("#success").show();
                         var count=document.getElementById('count').innerText;
                         document.getElementById('count').innerText=count-1;
                         $(that).parent().parent().remove();
                     }
                     else{
-                        $("$status-warning").text('['+ip+'] 删除成功');
+                        $("$status-warning").text('['+ip_pub+'] 删除成功');
                         $("#warning").show();
                     }
                 }
@@ -258,23 +258,23 @@
 	}
     
     function delhost(that){
-        var ip=$(that).parent().prev().prev().prev().prev().text();
+        var ip_pub=$(that).parent().prev().prev().prev().prev().prev().text();
         var username=$(that).parent().prev().prev().prev().text();
-        console.log(ip, username)
+        console.log(ip_pub, username)
         $.ajax({
             url: "/delhost/",
             type: "post",
-            data: {"ip": ip, 'username': username},
+            data: {"ip_pub": ip_pub, 'username': username},
             headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
             success: function(status){
                 console.log(status);
                 if(status=='success'){
                     $(that).parent().parent().remove();
-                    $("#status-success").text('['+ip+'] 删除成功');
+                    $("#status-success").text('['+ip_pub+'] 删除成功');
                     $("#success").show();
                 }
                 else if(status=='failed'){
-                    $("#status-warning").text('['+ip+'] 删除失败');
+                    $("#status-warning").text('['+ip_pub+'] 删除失败');
                     $("#warning").show();
                 }
             }
@@ -328,26 +328,28 @@
     <!-- 上传文件的同时执行ajax结束 -->
     
     $(".chk").click(function(e){
-        var ip=$(this).parent().prev().prev().prev().prev().text();
-        console.log(ip);
+        var ip_pub=$(this).parent().prev().prev().prev().prev().prev().text();
+        console.log(ip_pub);
         $.ajax({
             url: "/chkhost/",
             type: "post",
-            data: {'ip': ip},
+            data: {'ip_pub': ip_pub},
             headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
             success: function(status){
                 if(status=='success'){
                     console.log(status);
-                    $("#status-success").text('['+ip+'] 检测完成：'+status);
+                    $("#status-success").text('['+ip_pub+'] 检测完成：'+status);
                     $("#success").css('display', 'block');
                 }
                 else{
                     console.log(status);
-                    $("#status-warning").text('['+ip+'] 检测完成：'+status);
+                    $("#status-warning").text('['+ip_pub+'] 检测完成：'+status);
                     $("#warning").css('display', 'block');
                 }
             },
         });
+        $("#status-info").html('['+ip_pub+'] 检测中，稍后 <strong><a href="/host/">刷新</a></strong> 页面！');
+        $("#info").show();
     })
 
     $(function(){

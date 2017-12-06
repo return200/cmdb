@@ -5,7 +5,7 @@ import time
 import os,sys
 import subprocess
 
-from other import hosts_file, chk_ping
+from other import hosts_file, chk_ping, transfer
 
 #执行ssh
 def do_ssh(request, ip, username, password, flag):
@@ -17,6 +17,7 @@ def do_ssh(request, ip, username, password, flag):
         print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         print '检测%s，认证用户：%s，结果：%s' % (ip, username, chk_info)
         if chk_info == 'need':
+            password = transfer.do(request, password)
             cmd=' '.join([script, username, ip, password])
             #print 'do_ssh cmd:%s' % (cmd)
             run = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)

@@ -37,7 +37,8 @@
 <table class="table table-hover table-bordered table-striped table-condensed">
   <thead>
     <tr>
-      <th>IP地址</th>
+      <th>外网IP</th>
+      <th>内网IP</th>
       <th>认证用户</th>
       <th>主机状态</th>
       <th>添加时间</th>
@@ -59,7 +60,8 @@
     <!-- </tr>    -->
     {% for each in info.object_list %}
     <tr>
-        <td name="ip">{{ each.ip }}</td>
+        <td>{{ each.ip_pub }}</td>
+        <td>{{ each.ip_prv }}</td>
         <td>{{ each.username }}</td>
         <td>{{ each.status }}</td>
         <td>{{ each.update_time|date:"Y-m-d H:i:s" }}</td>
@@ -134,12 +136,14 @@
   <div class="modal-body">
         <form enctype="multipart/form-data" action="/addhost/manual/" method="post">
             {% csrf_token %}
-            <h5>IP地址：</h5>
-            <input type="text" name="ip">
+            <h5>外网IP：</h5>
+            <input type="text" name="ip_pub" required>
+            <h5>内网IP</h5>
+            <input type="text" name="ip_prv">
             <h5>认证用户：</h5>
-            <input type="text" name="authuser">
+            <input type="text" name="authuser" required>
             <h5>认证密码：</h5>
-            <input type="password" name="passw0rd">
+            <input type="password" name="passw0rd" required>
             <br>
             <button type="reset" class="btn btn-default">重置</button>
             <button type="submit" class="btn btn-default">添加</button>

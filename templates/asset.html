@@ -18,8 +18,11 @@
     <strong id="status-info">{{ statuss_info }}</strong>
 </div>
 
-<div class="margin">
-    <button type="button" class="btn pull-left" id="renew">批量更新</button>
+<div class="margin pull-left">
+    <button type="button" class="btn btn-default" id="renew">批量更新</button>
+    <button type="button" class="btn btn-default" disabled>导出</button>
+</div>
+<div class="pull-right">
     <form class="pull-right" action="/search/asset/" method="get">
         <!-- {% csrf_token %} -->
         <input class="span9" type="input" name="search" placeholder="可模糊搜索，不区分大小写">
@@ -59,7 +62,7 @@
     <!-- 测试数据结束 -->
     {% for each in info.object_list %}
     <tr>
-        <td name="ip">{{ each.ip }}</td>
+        <td name="ip">{{ each.ip_pub }}</td>
         <td>{{ each.hostname }}</td>
         <td>{{ each.os }}</td>
         <td>{{ each.cpu_model }}</td>

@@ -88,9 +88,8 @@ def getOne(request):
         data = runner.run()
 
         if data['dark'] == {} and data['contacted'] == {}:
-            update_time = u'未更新'
+            status = u'未更新'
         else:
-
             local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
             update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
 
@@ -120,6 +119,8 @@ def getOne(request):
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                 
                 Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                status = 'success'
+                print status
         
             elif 'failed' in result:
                 hostname = 'N/A'
@@ -136,6 +137,8 @@ def getOne(request):
                 print '\n--------------------\ngetOne:'
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip_pub, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+                status = 'failed: '+result['msg']
+                print status
 
         for (host, result) in data['dark'].items():
             hostname = 'N/A'
@@ -152,8 +155,10 @@ def getOne(request):
             print '\n--------------------\ngetOne:'
             print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
             print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+            status = 'failed: '+result['msg']
+            print status
 
-    return HttpResponse(update_time)
+    return HttpResponse(status)
 
 @login_required
 def getAll(request):

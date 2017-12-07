@@ -23,7 +23,7 @@ urlpatterns = [
     url(r'^$', views.asset),
     url(r'^login/$', views.loginview),
     url(r'^logout/$', views.logoutview),
-    url(r'^admin/', xadmin.site.urls),
+    url(r'^adminn/', xadmin.site.urls),
     url(r'^getone/$', views.getOne),
     url(r'^getall/$', views.getAll),
     url(r'^search/asset/$', views.search_asset),

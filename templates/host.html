@@ -134,7 +134,7 @@
     <span id="upload_info" style="display:none">{{ upload_info }}</span>
   </div>
   <div class="modal-body">
-        <form enctype="multipart/form-data" action="/addhost/manual/" method="post">
+        <form enctype="multipart/form-data" id="manualForm" action="/addhost/manual/" method="post">
             {% csrf_token %}
             <h5>外网IP：</h5>
             <input type="text" name="ip_pub" required>
@@ -143,7 +143,7 @@
             <h5>认证用户：</h5>
             <input type="text" name="authuser" required>
             <h5>认证密码：</h5>
-            <input type="password" name="passw0rd" required>
+            <input type="text" id="manualAdd" name="passw0rd" autocomplete="off" required>
             <br>
             <button type="reset" class="btn btn-default">重置</button>
             <button type="submit" class="btn btn-default">添加</button>

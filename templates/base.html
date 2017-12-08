@@ -295,6 +295,12 @@
     })
     
     $(function(){
+        $("#manualAdd").focus(function(){
+            this.type='password';
+        })
+    })
+    
+    $(function(){
         if($("#upload_info").text()!=''){
             if($("#upload_info").text()=='success'){
                 $("#status-info").html('批量添加中，稍后 <strong><a href="/host/">刷新</a></strong> 页面！');

@@ -5,7 +5,7 @@ import os
 import sys
 import subprocess
 
-def chk(request, ip, username, password):
+def chk(ip, username, password):
     script = sys.path[0]+'/other/chk_ping.sh'
     cmd = ' '.join([script, username, ip, password])
 
@@ -16,6 +16,8 @@ def chk(request, ip, username, password):
         #print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         #print 'chk_ping.sh: output: %s ,err:%s' % (output,err)
         if 'elcome' in output:
+            return 'unneed'
+        elif 'ogin' in output:
             return 'unneed'
         else:
             return 'need'

@@ -3,7 +3,7 @@
 
 # 对密码中的特殊字符进行转义
 
-def do(request, password):
+def do(password):
     pattern = {
         '\\': "\\\\",
         ";": "\;",
@@ -19,8 +19,8 @@ def do(request, password):
         "`": "\`",
     }
     
-    for each in pattern.keys():
-        password = password.replace(each, pattern[each])
+    for key, value in pattern.items():
+        password = password.replace(key, value)
 
     return password
 

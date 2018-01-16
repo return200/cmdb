@@ -377,6 +377,20 @@
             $("#status-success").parent().show();
         }
     })
+    
+    $(function(){
+        $(".change_pwd").click(function(){
+            var ip = $(this).parent().prev().prev().prev().prev().prev().text();
+            var username = $(this).parent().prev().prev().prev().text();
+            console.log(ip, username);
+            $.ajax({
+                url: '/pwd/update/',
+                data: {'ip': ip, 'username': username},
+                type: 'post',
+                headers: {'X-CSRFtoken': $.cookie('csrftoken')},
+            })
+        })
+    })
     </script>
     
     <!-- END JAVASCRIPTS -->

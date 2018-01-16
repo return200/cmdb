@@ -83,7 +83,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'cmdb',
 	'USER': 'root',
-	'PASSWORD': '',
+	'PASSWORD': '111111',
 	'HOST': '127.0.0.1',
     }
 }

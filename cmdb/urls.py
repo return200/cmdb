@@ -36,6 +36,7 @@ urlpatterns = [
     url(r'^addhost/template/$', views.template_add),
     url(r'^addhost/manual/$', views.manual_add),
     url(r'^chkhost/$', views.check_host),
+    url(r'^pwd/update/$', views.change_pwd),
     
     
     

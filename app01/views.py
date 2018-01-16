@@ -5,6 +5,7 @@ import datetime
 import os
 import sys
 import xlrd
+import random
 
 from django.shortcuts import render
 from django.http.response import HttpResponse, HttpResponseRedirect
@@ -15,7 +16,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from pure_pagination import Paginator, EmptyPage, PageNotAnInteger
 from app01.models import Asset, Host
-from other import hosts_ssh, hosts_file, chk_ip
+from other import hosts_ssh, hosts_file, chk_ip, crypt, update_pwd, transfer
 
 import ansible.runner
 
@@ -79,6 +80,7 @@ def getOne(request):
     get_result = None
     update_time = None
     ip_pub = None
+    system = None
     
     if request.method == 'POST':
         ip_pub = request.POST['ip_pub']
@@ -96,10 +98,15 @@ def getOne(request):
         for (host, result) in data['contacted'].items():
             if not 'failed' in result:
                 #ip = data['contacted'][host]['ansible_facts']['ansible_default_ipv4']['address']
-                #if chk_ip.do(request, ip) == 'matched':
+                #if chk_ip.do(ip) == 'matched':
                 #    ip_pub = ip
                 hostname = data['contacted'][host]['ansible_facts']['ansible_hostname']
-                system = data['contacted'][host]['ansible_facts']['ansible_lsb']['description']
+                if 'ansible_lsb' in data['contacted'][host]['ansible_facts'].keys():
+                    system = data['contacted'][host]['ansible_facts']['ansible_lsb']['description']
+                elif 'ansible_distribution' in data['contacted'][host]['ansible_facts'].keys():
+                    distribution = data['contacted'][host]['ansible_facts']['ansible_distribution']
+                    distribution_major = data['contacted'][host]['ansible_facts']['ansible_distribution_version']
+                    system = ' '.join([distribution, distribution_major])
                 cpu_core = data['contacted'][host]['ansible_facts']['ansible_processor_cores']
                 #单颗的核数
                 cpu_thread = data['contacted'][host]['ansible_facts']['ansible_processor_threads_per_core']
@@ -121,7 +128,7 @@ def getOne(request):
                 Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
                 status = 'success'
                 print status
-        
+                
             elif 'failed' in result:
                 hostname = 'N/A'
                 system = 'N/A'
@@ -163,6 +170,7 @@ def getOne(request):
 @login_required
 def getAll(request):
     disk = None
+    system = None
     update_time = None
     if os.path.isfile('/etc/ansible/hosts_cmdb'): 
         if request.method == 'POST':
@@ -181,10 +189,15 @@ def getAll(request):
                 
                 if not 'failed' in result:
                    # ip = data['contacted'][host]['ansible_facts']['ansible_default_ipv4']['address']
-                   # if chk_ip.do(request, ip) == 'matched':
+                   # if chk_ip.do(ip) == 'matched':
                    #     ip = ip
                     hostname = data['contacted'][host]['ansible_facts']['ansible_hostname']
-                    system = data['contacted'][host]['ansible_facts']['ansible_lsb']['description']
+                    if 'ansible_lsb' in data['contacted'][host]['ansible_facts'].keys():
+                        system = data['contacted'][host]['ansible_facts']['ansible_lsb']['description']
+                    elif 'ansible_distribution' in data['contacted'][host]['ansible_facts'].keys():
+                        distribution = data['contacted'][host]['ansible_facts']['ansible_distribution']
+                        distribution_major = data['contacted'][host]['ansible_facts']['ansible_distribution_version']
+                        system = ' '.join([distribution, distribution_major])
                     cpu_core = data['contacted'][host]['ansible_facts']['ansible_processor_cores']
                     #单颗的核数
                     cpu_thread = data['contacted'][host]['ansible_facts']['ansible_processor_threads_per_core']
@@ -198,7 +211,7 @@ def getAll(request):
                     for partation in device:
                         if data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
                             disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
-                    print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+                    print u"地址为%s的主机名为%s，操作系统为%s ，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                     if not Asset.objects.filter(ip_pub=host):
                         Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
                     else:
@@ -380,6 +393,7 @@ def manual_add(request):
         ip_prv = request.POST['ip_prv']
         username = request.POST['authuser']
         password = request.POST['passw0rd']
+        pwd_encrypt = crypt.do('set', password)
         
         if Host.objects.filter(ip_pub=ip_pub):
             info = u'该IP已存在'
@@ -391,7 +405,7 @@ def manual_add(request):
         else:
             info = hosts_ssh.do_ssh(request, ip_pub, username, password, flag=1)
             if info == '成功':
-                Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, status=info)    
+                Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, pwd=pwd_encrypt, status=info)    
                 print '\n--------------------\nmanual_add:'
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
                 print '手动添加%s，用户名：%s，结果:%s' %(ip_pub, username, info)
@@ -480,7 +494,26 @@ def check_host(request):
 def change_pwd(request):
 #    1.add sudo permission to normal user eg. usermode wheel user01
 #    2.run cmd 'sudo passwd user01' to change password of user01
-    pass
+    ip = request.POST.get('ip', '')
+    username = request.POST.get('username', '')
+    pwd = "".join(random.sample('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()',12))
+    pwd_update = update_pwd.do(username, ip, transfer.do(pwd))
+    if pwd_update == 'success':
+        pwd_crypt = crypt.do('set', transfer.do(pwd))
+        print ip, pwd, pwd_crypt    
+        
+        if pwd_crypt=='error':
+            status = 'failed'
+        else:
+            status = 'success'
+            host_pwd = Host.objects.get(ip_pub=ip)
+            host_pwd.pwd = pwd_crypt
+            host_pwd.save()
+    else:
+        status = 'failed'
+            
+    return HttpResponse(status)
+
 
 def loginview(request):
     if request.method == "GET":

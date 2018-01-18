@@ -19,7 +19,7 @@ def do_ssh(request, ip, username, password, flag):
         if chk_info == 'need':
             password = transfer.do(password)
             cmd=' '.join([script, username, ip, password])
-            #print 'do_ssh cmd:%s' % (cmd)
+            print 'do_ssh cmd:%s' % (cmd)
             run = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             (output, err) = run.communicate()
             print 'output', output, 'error', err

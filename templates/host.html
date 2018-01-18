@@ -20,7 +20,7 @@
 <div class="margin pull-left">
     <button type="button" class="btn btn-default" href="#templateModal" data-toggle="modal">模版添加</button>
     <button type="button" class="btn btn-default" href="#manualModal" data-toggle="modal">手动添加</button>
-    <button type="button" class="btn btn-default" disabled>导出</button>
+    <button type="button" class="btn btn-default" id="exporthost">导出</button>
     <h5 style="color:red">{{ error }}</h5>
 </div>
 
@@ -105,7 +105,7 @@
   </div>
   <div class="modal-body">
     <div>
-        <h5>第一步：</h5><a href="/download/" class="a-upload">下载模版</a>
+        <h5>第一步：</h5><a href="/download/template/" class="a-upload">下载模版</a>
         <span style="color:red">模版文件名为<code>template.xls</code>，不可改名，已有则无需再下载。</span>
     </div>
     <div>

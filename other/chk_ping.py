@@ -9,7 +9,8 @@ def chk(ip, username, password):
     script = sys.path[0]+'/other/chk_ping.sh'
     cmd = ' '.join([script, username, ip, password])
 
-    if os.path.isfile(script): 
+    if os.path.isfile(script):
+        print u'step: 检查是否已经认证'
         run = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (output, err) = run.communicate()
         #print '\n--------------------\ndelasset:\n'

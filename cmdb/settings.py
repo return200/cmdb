@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'pure_pagination',
     'xadmin',
     'crispy_forms',
+    'import_export',
 ]
 
 MIDDLEWARE_CLASSES = [

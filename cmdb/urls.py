@@ -31,13 +31,14 @@ urlpatterns = [
     url(r'^delasset/$', views.delasset),
     url(r'^delhost/$', views.delhost),
     url(r'^host/$', views.host),
-    url(r'^download/$', views.download),
+    url(r'^download/template/$', views.download_template),
+    url(r'^download/host/$', views.download_host),
+    # url(r'^download/asset/$', views.download_template),
     url(r'^upload/$', views.upload),
     url(r'^addhost/template/$', views.template_add),
     url(r'^addhost/manual/$', views.manual_add),
     url(r'^chkhost/$', views.check_host),
-    url(r'^pwd/update/$', views.change_pwd),
-    
-    
+    url(r'^pwd/update/$', views.UpdatePwd),
+    url(r'^export/host/$', views.export_host),
     
 ]

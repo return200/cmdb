@@ -7,16 +7,18 @@ set pwd [lindex $argv 2]
 set timeout 3
 
 spawn ssh-copy-id -i /root/.ssh/id_rsa.pub ${user}@${host}
-expect {
-  "(yes/no)?" {send "yes\r"}
-  "password:" {send "${pwd}\n"}
-}
 
 expect {
-  "password:" {send "${pwd}\n"}
+  "(yes/no)?" {
+    send "yes\r"
+    exp_continue
+  }
+  "password:" {
+    send_user "${pwd}"
+    send "${pwd}\n"
+    exp_continue
+  }
+  eof {
+    send_user "eof"
+  }
 }
-expect {
-  "password:" {send "${pwd}\n"}
-}
-expect eof
-#interact

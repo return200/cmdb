@@ -5,10 +5,11 @@ import datetime
 import os
 import sys
 import xlrd
+import xlwt
 import random
 
 from django.shortcuts import render
-from django.http.response import HttpResponse, HttpResponseRedirect
+from django.http.response import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.db.models import Q
 from django.utils import timezone
 from django.contrib import auth
@@ -17,6 +18,7 @@ from django.contrib.auth.decorators import login_required
 from pure_pagination import Paginator, EmptyPage, PageNotAnInteger
 from app01.models import Asset, Host
 from other import hosts_ssh, hosts_file, chk_ip, crypt, update_pwd, transfer
+from other.export import HostResource
 
 import ansible.runner
 
@@ -312,7 +314,7 @@ def host(request):
     return render(request, 'host.html', {'info': info})
 
 @login_required
-def download(request):
+def download_template(request):
     filename = sys.path[0]+'/media/template.xls'
     if os.path.isfile(filename):
         f = open(filename)
@@ -490,30 +492,117 @@ def check_host(request):
 
     return HttpResponse(status)
 
+# 更改资产密码
 @login_required
-def change_pwd(request):
+def UpdatePwd(request):
 #    1.add sudo permission to normal user eg. usermode wheel user01
 #    2.run cmd 'sudo passwd user01' to change password of user01
     ip = request.POST.get('ip', '')
     username = request.POST.get('username', '')
-    pwd = "".join(random.sample('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()',12))
-    pwd_update = update_pwd.do(username, ip, transfer.do(pwd))
+    pwd_generate = "".join(random.sample('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()',12))
+    print u'\n--------------------\nupdate_pwd:' 
+    print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'更新%s的密码:' % (ip)
+    pwd_update = update_pwd.do(username, ip, transfer.do(pwd_generate))
+    print u'结果：%s' % (pwd_update)
     if pwd_update == 'success':
-        pwd_crypt = crypt.do('set', transfer.do(pwd))
-        print ip, pwd, pwd_crypt    
-        
+        print u'step：对密码进行加密存储'
+        pwd_crypt = crypt.do('set', transfer.do(pwd_generate))
+        # print ip, pwd_generate, pwd_crypt    
         if pwd_crypt=='error':
             status = 'failed'
+            print u'存储失败!'
         else:
             status = 'success'
             host_pwd = Host.objects.get(ip_pub=ip)
             host_pwd.pwd = pwd_crypt
             host_pwd.save()
+            print u'更新完成!'
     else:
         status = 'failed'
-            
+
     return HttpResponse(status)
 
+
+
+# 导出host的ip、密码
+@login_required
+def export_host(request):
+    global export_host_filename
+    status = []
+    export_host_filename = sys.path[0]+'/media/'+time.strftime('%Y-%m-%d-%H-%M', time.localtime())+'.xls'
+    headers = (u'公网IP', u'内网IP', u'用户名', u'密码')
+    print u'\n--------------------\nexport_host:' 
+    print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'导出 host 列表'
+    
+    try:
+        dataset = HostResource().export() 
+        workbook = xlwt.Workbook(encoding = 'utf-8')
+        worksheet = workbook.add_sheet('sheet01')
+        # style = xlwt.XFStyle()
+        # font = xlwt.Font()
+        # font.name = u'宋体'
+        # font.bold = True
+        # style.font = font
+        
+        for i in range(0, len(headers)):
+            worksheet.write(0, i, headers[i])
+        
+        rows = len(dataset)
+        line = len(dataset[0])
+        row = 1
+        
+        
+        for each in dataset:
+            print u'step：获取第%s条信息' % row
+            
+            for j in range(0, line):
+                
+                content = each[j]
+                if j==3:
+                    print u'step：对密码进行解密'
+                    content = crypt.do('get', each[j])
+                # print 'col', j
+                # print 'each[k]', each[j]
+                worksheet.write(row, j, content)
+            print u'step：写入第%s条信息\n' % row
+            row += 1
+            
+        
+        workbook.save(export_host_filename)
+        if os.path.isfile(export_host_filename):
+            status.append('success')
+            status.append(export_host_filename)
+        else:
+            status.append('failed')
+    except Exception as e:
+        status.append('failed')
+        status.append(e)
+
+    print u'结果：', status
+    
+    return JsonResponse(status, safe=False)
+
+    
+@login_required
+def download_host(request):
+    print u'\n--------------------\ndownload_host:' 
+    print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'下载 host 列表'
+    print u'step：检查文件是否存在'
+    if os.path.isfile(export_host_filename):
+        print u'step：文件存在，开始解析'
+        f = open(export_host_filename)
+        data = f.read()
+        f.close()
+        response = HttpResponse(data) 
+        response['Content-Disposition'] = 'attachment; filename=%s' % export_host_filename.split('/')[-1]
+        print u'step：解析完成，删除文件'
+        os.remove(export_host_filename)
+        return response
+    else:
+        print u'结果：文件不存在！'
+        return render(request, 'host.html', {'error': u'文件不存在！'})
+
+    
 
 def loginview(request):
     if request.method == "GET":

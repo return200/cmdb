@@ -8,21 +8,26 @@ import subprocess
 from other import hosts_file, chk_ping, transfer
 
 #执行ssh
-def do_ssh(request, ip, username, password, flag):
+def do_ssh(ip, username, password, debug, flag):
     info = ''
     script = sys.path[0]+'/other/auto_ssh.sh'
     if os.path.isfile(script):
-        chk_info = chk_ping.chk(ip, username, password)
-        print '\n--------------------\nchk_ping:'
-        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-        print '检测%s，认证用户：%s，结果：%s' % (ip, username, chk_info)
+        # chk_info = chk_ping.chk(ip, username, password)
+        chk_info = chk_ping.do(ip, username, debug)
+        # print '\n--------------------\nchk_ping:'
+        # print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        # print '检测%s，认证用户：%s，结果：%s' % (ip, username, chk_info)
         if chk_info == 'need':
             password = transfer.do(password)
             cmd=' '.join([script, username, ip, password])
-            print 'do_ssh cmd:%s' % (cmd)
+            print u'step：开始认证'
+            if debug=='enabled':
+                print u'      [DEBUG] do_ssh cmd:%s' % (cmd)
             run = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             (output, err) = run.communicate()
-            print 'output', output, 'error', err
+            if debug=='enabled':
+                print u'      [DEBUG] output：', output
+                print u'      [DEBUG] error：', err
             if 'Permission denied' in output:
                 info = '用户名或密码错误'
             elif 'Connection refused' in output:
@@ -37,14 +42,21 @@ def do_ssh(request, ip, username, password, flag):
                 info = '未安装 expect 包'
             else:
                 info = '未知错误'
+
+            # print u'      结果：', info
+            
         elif chk_info == 'unneed':
             info = '成功'
-        else:
-            info = 'chk_ping.sh Not Found'
+        # else:
+            # info = 'chk_ping.sh Not Found'
+            
+            # print u'      结果：', info
     else:
         info = 'auto_ssh.sh Not Found'
+        
+    # print u'      结果：', info
 
-    hosts_file.create_file(request, ip, username, flag, info)
+    hosts_file.create_file(ip, username, flag, info)
     
     return info
 

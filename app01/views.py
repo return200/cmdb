@@ -7,6 +7,7 @@ import sys
 import xlrd
 import xlwt
 import random
+import ConfigParser
 
 from django.shortcuts import render
 from django.http.response import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -23,6 +24,22 @@ from other.export import HostResource
 import ansible.runner
 
 # Create your views here.
+
+try:
+    global debug
+    config = ConfigParser.ConfigParser()
+    config.read('%s/conf/cmdb.conf' % sys.path[0]) 
+    debug = config.get('base', 'debug')
+    if debug=='enabled':
+        print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        print '!!!!!!!!! DEBUG MODE ON !!!!!!!!!'
+        print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    else:
+        print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        print '!!!!!!!! DEBUG MODE OFF !!!!!!!!!'
+        print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+except Exception as e:
+    print u'！！！cmdb.conf 读取失败！！！'
 
 @login_required
 def asset(request):
@@ -348,6 +365,7 @@ def upload(request):
 def template_add(request):
     flag = 0
     count = 5
+    num = 001
     filename = sys.path[0]+'/upload/template.xls'
     if request.method == 'POST':
         while count>0:
@@ -356,14 +374,22 @@ def template_add(request):
                 table = data.sheets()[0]
                 nrows = table.nrows
                 print '\n--------------------\ntemplate_add:'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+                
                 for i in range(1, nrows):
+                    data = xlrd.open_workbook(filename)
+                    table = data.sheets()[0]
+                    nrows = table.nrows
                     ip_pub = table.row_values(i)[0]
                     ip_prv = table.row_values(i)[1]
                     username = table.row_values(i)[2]
                     password = table.row_values(i)[3]
-                    info = hosts_ssh.do_ssh(request, ip_pub, username, password, flag)
-                    print '模版添加%s，认证用户：%s，结果：%s' %(ip_pub, username, info)
+                    print '[%03d] 开始添加 %s' % (num, ip_pub)
+                    info = hosts_ssh.do_ssh(ip_pub, username, password, debug, flag)
+                    if info==u'成功':
+                        print '添加结果：\033[32m%s\033[0m' % (info)
+                    else:
+                        print '添加结果：\033[31m%s\033[0m' % (info)
                     if not Host.objects.filter(ip_pub=ip_pub):
                         Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, status=info)
                     else:
@@ -371,8 +397,10 @@ def template_add(request):
                         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
                         Host.objects.filter(ip_pub=ip_pub).update(username=username, status=info, update_time=update_time) 
                     flag = 1
-                status = u'添加完成'
-                print status
+                    num+=1
+                    print ''
+                status = 'success'
+                print u'\n------添加完成------\n'
                 os.remove(filename)
                 break
             else:
@@ -391,6 +419,8 @@ def manual_add(request):
     if request.method == 'POST':
         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+        print '\n--------------------\nmanual_add:'
+        print local_time
         ip_pub = request.POST['ip_pub']
         ip_prv = request.POST['ip_prv']
         username = request.POST['authuser']
@@ -399,24 +429,18 @@ def manual_add(request):
         
         if Host.objects.filter(ip_pub=ip_pub):
             info = u'该IP已存在'
-            Host.objects.filter(ip_pub=ip_pub).update(update_time=update_time)
-            print '\n--------------------\nmanual_add:'
-            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
-            print '手动添加%s，用户名：%s，结果:%s' %(ip_pub, username, info)
+            Host.objects.filter(ip_pub=ip_pub).update(update_time=update_time) 
+            print '\n手动添加 %s，用户名：%s，结果:\033[31m%s\033[0m\n' %(ip_pub, username, info)
             return render(request, 'host.html', {'status_warning': info})
         else:
-            info = hosts_ssh.do_ssh(request, ip_pub, username, password, flag=1)
+            info = hosts_ssh.do_ssh(ip_pub, username, password, debug, flag=1)
             if info == '成功':
-                Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, pwd=pwd_encrypt, status=info)    
-                print '\n--------------------\nmanual_add:'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
-                print '手动添加%s，用户名：%s，结果:%s' %(ip_pub, username, info)
+                Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, pwd=pwd_encrypt, status=info)     
+                print '\n手动添加 %s，用户名：%s，结果:\033[32m%s\033[0m\n' %(ip_pub, username, info)
                 return render(request, 'host.html', {'status_success': info})
             else:
                 #Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, status=info)
-                print '\n--------------------\nmanual_add:'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
-                print '手动添加%s，用户名：%s，结果:%s' %(ip_pub, username, info)
+                print '\n手动添加 %s，用户名：%s，结果:\033[31m%s\033[0m\n' %(ip_pub, username, info)
                 return render(request, 'host.html', {'status_warning': info})
         
     else:
@@ -430,17 +454,28 @@ def delhost(request):
         ip_pub = request.POST['ip_pub']
         username = request.POST['username']
         content = '%s ansible_ssh_user=%s' % (ip_pub, username)
-
+        
+        print '\n--------------------\ndelhost:'
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        print u'step：删除%s' %(ip_pub)
+        
         Host.objects.filter(ip_pub=ip_pub).delete()
         Asset.objects.filter(ip_pub=ip_pub).delete()
         if not Host.objects.filter(ip_pub=ip_pub):
-            os.system("sed -i '/"+content+"/d' "+filename)
-            status = "success"
+            print u'step：从 inventory 中删除 %s' %(content)
+            info = os.system("sed -i '/"+content+"/d' "+filename)
+            if debug=='enabled':
+                print '      [DEBUG] sed -i "/%s/d" %s 命令返回值：%s' % (content, filename, info)
+            if info==0:
+                status = "success"
+            else:
+                status = "failed"
         else:
             status = "failed"
-        print '\n--------------------\ndelhost:'
-        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
-        print '删除%s，结果:%s' %(content, status)
+        if status=='success':
+            print u'删除结果：\033[32m%s\033[0m\n' %(status)
+        else:
+            print u'删除结果：\033[31m%s\033[0m\n' %(status)
 
     return HttpResponse(status)
     
@@ -469,10 +504,15 @@ def check_host(request):
     status = None
     if request.method == 'POST':
         ip_pub = request.POST['ip_pub']
+        print '\n--------------------\ncheck_host:'
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        print u'step：检测%s' % ip_pub
         runner = ansible.runner.Runner(
             module_name='ping', pattern=ip_pub, host_list='/etc/ansible/hosts_cmdb'
         )
         data = runner.run()
+        if debug=='enabled':
+            print u'      [DEBUG]', data
 
         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
@@ -485,10 +525,13 @@ def check_host(request):
 
         for (host, result) in data['dark'].items():
             status = 'failed: '+result['msg']
-
-        print '\n--------------------\ncheck_host:'
-        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
-        print '检测%s，结果：%s' % (ip_pub, status)
+            
+        if len(data['contacted'].items())==0 and len(data['dark'].items())==0:
+            status = u'failed: '+u'检查 inventory 中是否包含 %s' % ip_pub
+        if status=='success':
+            print u'检测结果：\033[32m%s\033[0m\n' % (u'成功')
+        else:
+            print u'检测结果：\033[31m失败，%s\033[0m\n' % (status)
 
     return HttpResponse(status)
 

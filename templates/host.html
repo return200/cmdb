@@ -68,7 +68,16 @@
         <td>
             <button class="btn btn-default chk">检测</button>
             <button class="btn btn-default change_pwd" >改密</button>
-            <button class="btn btn-default" onclick="delhost(this)">删除</button>
+            <div class="btn-group">
+                <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                Tools <i class="icon-angle-down"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="#" class="change_pwd1" change="root">root</a></li>
+                    <li><a href="#" class="change_pwd1" change="wwwuser">wwwuser</a></li>
+                </ul>
+            </div>
+            <button class="btn red btn-default" onclick="delhost(this)">删除</button>
         </td>
     </tr>
     {% endfor %}

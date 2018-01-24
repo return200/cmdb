@@ -8,13 +8,13 @@ set timeout 3
 
 spawn ssh ${user}@${host}
 
-expect {
-  "yes/no" {send "${pwd}\n"}
-}
+# expect {
+  # "yes/no" {send "yes\n"}
+# }
 
-expect {
-  "password:" {send "${pwd}\n"}
-}
+# expect {
+  # "password:" {send "${pwd}\n"}
+# }
 
 expect eof
 

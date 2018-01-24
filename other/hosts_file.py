@@ -3,25 +3,31 @@
 
 import time
 
-def create_file(request, ip, username, flag, info):
+def create_file(ip, username, flag, info):
+    # flag=1 手动添加，以及非首次添加
+    # flag=0 批量添加，以及首次添加
+    
     host_file = '/etc/ansible/hosts_cmdb'
-    item = '%s ansible_ssh_user=%s\n' % (ip, username)
+    item = '%s ansible_ssh_user=%s' % (ip, username)
     f = file(host_file, 'a+')
 
     if flag == 0 and info == '成功':
+        print u'step：开始写入 hosts 文件'
+        print u'      首次写入，清空 hosts 文件'
         f.truncate()
-        f.writelines(item)
+        print u'      写入 %s 到 %s' % (item, host_file)
+        f.writelines(item+'\n')
         f.close()
     elif flag == 0 and info != '成功':
-	f.truncate()
-	f.close()
-    elif flag ==1 and info == '成功':
-        f.writelines(item)
+        print u'step：开始写入 hosts 文件'
+        print u'      首次添加，清空 hosts 文件'
+        f.truncate()
         f.close()
-
-    print '\n--------------------\ncreate_file:'
-    print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-    print '添加 %s 到 %s' % (item, host_file)
+    elif flag ==1 and info == '成功':
+        print u'step：开始写入 hosts 文件'
+        print u'      写入 %s 到 %s' % (item, host_file)
+        f.writelines(item+'\n')
+        f.close()
 
 if __name__ == '__main__':
     print 'Only Run By import'

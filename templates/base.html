@@ -310,7 +310,7 @@
                     type: "post",
                     headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
                     success: function(status){
-                        if(status=='添加完成'){
+                        if(status=='success'){
                             $("#status-success").text('批量添加完成');
                             $("#success").show();
                         }
@@ -408,6 +408,18 @@
             })
         })
     })
+    
+    
+    
+    $(function(){
+        $("a[class='change_pwd1']").click(function(){
+            var ip = $(this).parent().parent().parent().parent().prev().prev().prev().prev().prev().text();
+            console.log($(this).text(), ip);
+        })
+    })
+    
+    
+    
     
     $(function(){
         $('#exporthost').click(function(){

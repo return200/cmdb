@@ -383,19 +383,27 @@ def template_add(request):
                     ip_pub = table.row_values(i)[0]
                     ip_prv = table.row_values(i)[1]
                     username = table.row_values(i)[2]
-                    password = table.row_values(i)[3]
+                    password = table.row_values(i)[3]   # root密码
+                    password_user = table.row_values(i)[4]  # 普通用户密码
+                    pwd_root_encrypt = crypt.do('set', password)
+                    pwd_user_encrypt = crypt.do('set', password_user)
                     print '[%03d] 开始添加 %s' % (num, ip_pub)
-                    info = hosts_ssh.do_ssh(ip_pub, username, password, debug, flag)
+                    if username=='root':
+                        info = hosts_ssh.do_ssh(ip_pub, username, password, debug, flag)
+                    else:
+                        info = hosts_ssh.do_ssh(ip_pub, username, password_user, debug, flag)
                     if info==u'成功':
                         print '添加结果：\033[32m%s\033[0m' % (info)
                     else:
                         print '添加结果：\033[31m%s\033[0m' % (info)
                     if not Host.objects.filter(ip_pub=ip_pub):
-                        Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, status=info)
+                        Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username,
+                                            pwd_root=pwd_root_encrypt, pwd_user=pwd_user_encrypt, status=info)
                     else:
                         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
                         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
-                        Host.objects.filter(ip_pub=ip_pub).update(username=username, status=info, update_time=update_time) 
+                        Host.objects.filter(ip_pub=ip_pub).update(username=username, pwd_root=pwd_root_encrypt, pwd_user=pwd_user_encrypt,
+                                                                    status=info, update_time=update_time)
                     flag = 1
                     num+=1
                     print ''
@@ -435,7 +443,10 @@ def manual_add(request):
         else:
             info = hosts_ssh.do_ssh(ip_pub, username, password, debug, flag=1)
             if info == '成功':
-                Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, pwd=pwd_encrypt, status=info)     
+                if username == 'root':
+                    Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, pwd_root=pwd_encrypt, status=info)
+                else:
+                    Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, pwd_user=pwd_encrypt, status=info)
                 print '\n手动添加 %s，用户名：%s，结果:\033[32m%s\033[0m\n' %(ip_pub, username, info)
                 return render(request, 'host.html', {'status_success': info})
             else:
@@ -512,7 +523,7 @@ def check_host(request):
         )
         data = runner.run()
         if debug=='enabled':
-            print u'      [DEBUG]', data
+            print u'      [DEBUG] ', data
 
         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
@@ -544,24 +555,35 @@ def UpdatePwd(request):
     username = request.POST.get('username', '')
     pwd_generate = "".join(random.sample('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()',12))
     print u'\n--------------------\nupdate_pwd:' 
-    print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'更新%s的密码:' % (ip)
+    print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'更新 %s@%s 的密码:' % (username, ip)
+    print u'step：生成 %s %s 用户的新密码' % (ip, username)
+    if debug=='enabled':
+        print u'      [DEBUG] %s %s 用户的新密码：%s' % (ip, username, pwd_generate)
     pwd_update = update_pwd.do(username, ip, transfer.do(pwd_generate))
-    print u'结果：%s' % (pwd_update)
+    # if pwd_update=='success':
+        
     if pwd_update == 'success':
+        print u'      结果：\033[32m成功\033[0m'
         print u'step：对密码进行加密存储'
         pwd_crypt = crypt.do('set', transfer.do(pwd_generate))
         # print ip, pwd_generate, pwd_crypt    
         if pwd_crypt=='error':
             status = 'failed'
-            print u'存储失败!'
+            print u'      结果：\033[31m存储失败!\033[0m'
+            print u'\033[31m------更新失败------\033[0m\n'
         else:
             status = 'success'
             host_pwd = Host.objects.get(ip_pub=ip)
-            host_pwd.pwd = pwd_crypt
+            if username=='root':
+                host_pwd.pwd_root = pwd_crypt
+            else:
+                host_pwd.pwd_user = pwd_crypt
             host_pwd.save()
-            print u'更新完成!'
+            print u'      结果：\033[32m成功\033[0m'
+            print u'------更新完成------\n'
     else:
         status = 'failed'
+        print u'\033[31m------更新失败------\033[0m\n'
 
     return HttpResponse(status)
 
@@ -573,7 +595,7 @@ def export_host(request):
     global export_host_filename
     status = []
     export_host_filename = sys.path[0]+'/media/'+time.strftime('%Y-%m-%d-%H-%M', time.localtime())+'.xls'
-    headers = (u'公网IP', u'内网IP', u'用户名', u'密码')
+    headers = (u'公网IP', u'内网IP', u'root密码', u'普通用户密码')  # 0,1,3,4
     print u'\n--------------------\nexport_host:' 
     print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'导出 host 列表'
     
@@ -601,12 +623,19 @@ def export_host(request):
             for j in range(0, line):
                 
                 content = each[j]
-                if j==3:
-                    print u'step：对密码进行解密'
+                if j==2:
+                    print u'step：对 root 密码进行解密'
                     content = crypt.do('get', each[j])
+                    if debug=='enabled':
+                        print u'      [DEBUG] root 密码解密结果：', content.replace('\n', '')
+                elif j==3:
+                    print u'step：对普通用户密码进行解密'
+                    content = crypt.do('get', each[j])
+                    if debug=='enabled':
+                        print u'      [DEBUG] 普通用户密码解密结果：', content.replace('\n', '')
                 # print 'col', j
                 # print 'each[k]', each[j]
-                worksheet.write(row, j, content)
+                worksheet.write(row, j, content.replace('\n', ''))
             print u'step：写入第%s条信息\n' % row
             row += 1
             
@@ -621,7 +650,8 @@ def export_host(request):
         status.append('failed')
         status.append(e)
 
-    print u'结果：', status
+    print u'导出结果：%s\n' % status
+    print u'-----导出完成------\n'
     
     return JsonResponse(status, safe=False)
 

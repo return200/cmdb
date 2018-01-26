@@ -378,11 +378,48 @@
         }
     })
     
+    <!-- $(function(){ -->
+        <!-- $(".change_pwd").click(function(){ -->
+            <!-- var ip = $(this).parent().prev().prev().prev().prev().prev().text(); -->
+            <!-- var username = $(this).parent().prev().prev().prev().text(); -->
+            <!-- console.log(ip, username); -->
+            <!-- $.ajax({ -->
+                <!-- url: '/pwd/update/', -->
+                <!-- data: {'ip': ip, 'username': username}, -->
+                <!-- type: 'post', -->
+                <!-- headers: {'X-CSRFtoken': $.cookie('csrftoken')}, -->
+                <!-- success: function(status){ -->
+                    <!-- if (status=='success'){ -->
+                        <!-- console.log(status); -->
+                        <!-- $("#status-success").text('['+ip+'] 密码更改成功：'+status); -->
+                        <!-- $("#success").css('display', 'block'); -->
+                    <!-- } -->
+                    <!-- else{ -->
+                        <!-- console.log(status); -->
+                        <!-- $("#status-warning").text('['+ip+'] 密码更改失败：'+status); -->
+                        <!-- $("#warning").css('display', 'block'); -->
+                    <!-- } -->
+                <!-- }, -->
+                <!-- error: function(status){ -->
+                    <!-- console.log(status); -->
+                    <!-- $("#status-warning").text('['+ip+'] 密码更改失败:'+status); -->
+                    <!-- $("#warning").css('display', 'block'); -->
+                <!-- } -->
+            <!-- }) -->
+        <!-- }) -->
+    <!-- }) -->
+    
+    
+    
     $(function(){
-        $(".change_pwd").click(function(){
-            var ip = $(this).parent().prev().prev().prev().prev().prev().text();
-            var username = $(this).parent().prev().prev().prev().text();
-            console.log(ip, username);
+        $("a[class='change_pwd']").click(function(){
+            var ip = $(this).parent().parent().parent().parent().prev().prev().prev().prev().prev().text();
+            var username = $(this).text();
+            console.log($(this).text(), ip);
+            $("#success").css('display', 'none');
+            $("#warning").css('display', 'none');
+            $("#status-info").text('更新 ['+ip+'] '+username+' 用户的密码，请稍后');
+            $("#info").css('display', 'block');
             $.ajax({
                 url: '/pwd/update/',
                 data: {'ip': ip, 'username': username},
@@ -391,30 +428,24 @@
                 success: function(status){
                     if (status=='success'){
                         console.log(status);
-                        $("#status-success").text('['+ip+'] 密码更改成功：'+status);
+                        $("#status-success").text('['+ip+'] '+username+' 密码更新成功：'+status);
                         $("#success").css('display', 'block');
+                        $("#info").css('display', 'none');
                     }
                     else{
                         console.log(status);
-                        $("#status-warning").text('['+ip+'] 密码更改失败：'+status);
+                        $("#status-warning").text('['+ip+'] '+username+' 密码更新失败：'+status);
                         $("#warning").css('display', 'block');
+                        $("#info").css('display', 'none');
                     }
                 },
                 error: function(status){
                     console.log(status);
-                    $("#status-warning").text('['+ip+'] 密码更改失败:'+status);
+                    $("#status-warning").text('['+ip+'] '+username+' 密码更新失败:'+status);
                     $("#warning").css('display', 'block');
+                    $("#info").css('display', 'none');
                 }
             })
-        })
-    })
-    
-    
-    
-    $(function(){
-        $("a[class='change_pwd1']").click(function(){
-            var ip = $(this).parent().parent().parent().parent().prev().prev().prev().prev().prev().text();
-            console.log($(this).text(), ip);
         })
     })
     

@@ -7,10 +7,10 @@ import chk_ping
 
 def do(username, ip, pwd):
     try: 
-        res = chk_ping.chk(ip, username, pwd)
+        res = chk_ping.do(ip, username, pwd)
         if res=='unneed':
             cmd = "ssh %s@%s -C 'echo %s | passwd --stdin %s'" % (username, ip, pwd, username)
-            print u'step：已经认证，开始更新密码'
+            print u'step：开始更新密码'
             run = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             (output, error) = run.communicate()
             # print 'output:', output, 'error:', error

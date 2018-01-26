@@ -8,4 +8,4 @@ class HostResource(resources.ModelResource):
 
     class Meta:
         model = Host
-        fields = ('ip_pub', 'ip_prv', 'username', 'pwd')
+        fields = ('ip_pub', 'ip_prv', 'pwd_root', 'pwd_user')

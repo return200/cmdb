@@ -47,14 +47,14 @@ def do(ip, username, debug):
     cmd = ' '.join([script, username, ip])
 
     if os.path.isfile(script):
-        print u'step: 检查 %s@%s 是否已经认证' % (username, ip)
+        print u'step: 检查 %s@%s 是否已经认证' % ('root', ip)
         run = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        (output, err) = run.communicate()
+        (output, error) = run.communicate()
         #print '\n--------------------\ndelasset:\n'
         # print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         if debug=='enabled':
             print '      [DEBUG] chk_ping.sh: output: %s' % (output)
-            print '      [DEBUG] chk_ping.sh: error: %s' % (err)
+            print '      [DEBUG] chk_ping.sh: error: %s' % (error)
         if 'elcome' in output:
             print '      结果：已认证'
             return 'unneed'

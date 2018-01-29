@@ -26,10 +26,11 @@ import ansible.runner
 # Create your views here.
 
 try:
-    global debug
+    global debug, password_length
     config = ConfigParser.ConfigParser()
     config.read('%s/conf/cmdb.conf' % sys.path[0]) 
     debug = config.get('base', 'debug')
+    password_length = config.get('base', 'password_length')
     if debug=='enabled':
         print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
         print '!!!!!!!!! DEBUG MODE ON !!!!!!!!!'
@@ -433,7 +434,9 @@ def manual_add(request):
         ip_prv = request.POST['ip_prv']
         username = request.POST['authuser']
         password = request.POST['passw0rd']
-        pwd_encrypt = crypt.do('set', password)
+        password_user = request.POST['passw0rd1']
+        pwd_root_encrypt = crypt.do('set', password, debug)
+        pwd_user_encrypt = crypt.do('set', password_user, debug)
         
         if Host.objects.filter(ip_pub=ip_pub):
             info = u'该IP已存在'
@@ -443,10 +446,8 @@ def manual_add(request):
         else:
             info = hosts_ssh.do_ssh(ip_pub, username, password, debug, flag=1)
             if info == '成功':
-                if username == 'root':
-                    Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, pwd_root=pwd_encrypt, status=info)
-                else:
-                    Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, pwd_user=pwd_encrypt, status=info)
+                Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username,
+                                    pwd_root=pwd_root_encrypt, pwd_user=pwd_user_encrypt, status=info)
                 print '\n手动添加 %s，用户名：%s，结果:\033[32m%s\033[0m\n' %(ip_pub, username, info)
                 return render(request, 'host.html', {'status_success': info})
             else:
@@ -553,7 +554,8 @@ def UpdatePwd(request):
 #    2.run cmd 'sudo passwd user01' to change password of user01
     ip = request.POST.get('ip', '')
     username = request.POST.get('username', '')
-    pwd_generate = "".join(random.sample('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()',12))
+    print password_length
+    pwd_generate = "".join(random.sample('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()', int(password_length)))
     print u'\n--------------------\nupdate_pwd:' 
     print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'更新 %s@%s 的密码:' % (username, ip)
     print u'step：生成 %s %s 用户的新密码' % (ip, username)
@@ -565,8 +567,10 @@ def UpdatePwd(request):
     if pwd_update == 'success':
         print u'      结果：\033[32m成功\033[0m'
         print u'step：对密码进行加密存储'
-        pwd_crypt = crypt.do('set', transfer.do(pwd_generate))
-        # print ip, pwd_generate, pwd_crypt    
+        pwd_crypt = crypt.do('set', transfer.do(pwd_generate), debug)
+        if debug=='enabled':
+            print u'      [DEBUG] 加密前密码：%s' % (pwd_generate)
+            print u'              加密后密码：%s' % (pwd_crypt)
         if pwd_crypt=='error':
             status = 'failed'
             print u'      结果：\033[31m存储失败!\033[0m'
@@ -625,14 +629,14 @@ def export_host(request):
                 content = each[j]
                 if j==2:
                     print u'step：对 root 密码进行解密'
-                    content = crypt.do('get', each[j])
+                    content = crypt.do('get', each[j], debug)
                     if debug=='enabled':
-                        print u'      [DEBUG] root 密码解密结果：', content.replace('\n', '')
+                        print u'      [DEBUG] root 密码解密结果:', content.replace('\n', '')
                 elif j==3:
                     print u'step：对普通用户密码进行解密'
-                    content = crypt.do('get', each[j])
+                    content = crypt.do('get', each[j], debug)
                     if debug=='enabled':
-                        print u'      [DEBUG] 普通用户密码解密结果：', content.replace('\n', '')
+                        print u'      [DEBUG] 普通用户密码解密结果:', content.replace('\n', '')
                 # print 'col', j
                 # print 'each[k]', each[j]
                 worksheet.write(row, j, content.replace('\n', ''))

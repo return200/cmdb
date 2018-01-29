@@ -18,6 +18,7 @@ def do(password):
         "!": "\!",
         "`": "\`",
         "$": "\$",
+        "\n": "",
     }
     
     for key, value in pattern.items():

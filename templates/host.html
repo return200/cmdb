@@ -150,10 +150,12 @@
             <h5>内网IP</h5>
             <input type="text" name="ip_prv">
             <h5>认证用户：</h5>
-            <input type="text" name="authuser" required>
+            <input type="text" name="authuser" required value="root">
             <h5>认证密码：</h5>
-            <input type="text" id="manualAdd" name="passw0rd" autocomplete="off" required>
+            <input type="text" class="manualAdd" name="passw0rd" autocomplete="off" required>
             <br>
+            <h5>wwwuser 密码：</h5>
+            <input type="text" class="manualAdd" name="passw0rd1" autocomplete="off" required>
             <button type="reset" class="btn btn-default">重置</button>
             <button type="submit" class="btn btn-default">添加</button>
         </form>

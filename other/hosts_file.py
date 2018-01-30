@@ -3,11 +3,11 @@
 
 import time
 
-def create_file(ip, username, flag, info):
+def create_file(ip, username, flag, host_list, info):
     # flag=1 手动添加，以及非首次添加
     # flag=0 批量添加，以及首次添加
     
-    host_file = '/etc/ansible/hosts_cmdb'
+    host_file = host_list
     item = '%s ansible_ssh_user=%s' % (ip, username)
     f = file(host_file, 'a+')
 

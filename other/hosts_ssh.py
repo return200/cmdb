@@ -8,7 +8,7 @@ import subprocess
 from other import hosts_file, chk_ping, transfer
 
 #执行ssh
-def do_ssh(ip, username, password, debug, flag):
+def do_ssh(ip, username, password, debug, host_list, flag):
     info = ''
     script = sys.path[0]+'/other/auto_ssh.sh'
     if os.path.isfile(script):
@@ -56,7 +56,7 @@ def do_ssh(ip, username, password, debug, flag):
         
     # print u'      结果：', info
 
-    hosts_file.create_file(ip, username, flag, info)
+    hosts_file.create_file(ip, username, flag, host_list, info)
     
     return info
 

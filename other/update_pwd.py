@@ -5,9 +5,9 @@ import subprocess
 import time
 import chk_ping
 
-def do(username, ip, pwd):
+def do(username, ip, pwd, debug):
     try: 
-        res = chk_ping.do(ip, 'root', pwd)
+        res = chk_ping.do(ip, 'root', debug)
         if res=='unneed':
             cmd = "ssh root@%s -C 'echo %s | passwd --stdin %s'" % (ip, pwd, username)
             print u'step：开始更新密码'

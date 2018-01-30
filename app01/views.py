@@ -19,18 +19,19 @@ from django.contrib.auth.decorators import login_required
 from pure_pagination import Paginator, EmptyPage, PageNotAnInteger
 from app01.models import Asset, Host
 from other import hosts_ssh, hosts_file, chk_ip, crypt, update_pwd, transfer
-from other.export import HostResource
+from other.export import HostResource, AssetResource
 
 import ansible.runner
 
 # Create your views here.
 
 try:
-    global debug, password_length
+    global debug, password_length, host_list
     config = ConfigParser.ConfigParser()
     config.read('%s/conf/cmdb.conf' % sys.path[0]) 
     debug = config.get('base', 'debug')
     password_length = config.get('base', 'password_length')
+    host_list = config.get('base', 'host_list')
     if debug=='enabled':
         print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
         print '!!!!!!!!! DEBUG MODE ON !!!!!!!!!'
@@ -104,11 +105,16 @@ def getOne(request):
     
     if request.method == 'POST':
         ip_pub = request.POST['ip_pub']
+        print '\n--------------------\ngetOne:'
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'收集资产信息'
+        print u'step：收集', ip_pub
         runner = ansible.runner.Runner(
-            module_name='setup', pattern=ip_pub, host_list='/etc/ansible/hosts_cmdb'
+            module_name='setup', pattern=ip_pub, host_list=host_list
         )
         data = runner.run()
-
+        
+        if debug=='enabled':
+            print u'      [DEBUG] ', data
         if data['dark'] == {} and data['contacted'] == {}:
             status = u'未更新'
         else:
@@ -141,13 +147,10 @@ def getOne(request):
                     if data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
                         disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
             
-                print '\n--------------------\ngetOne:'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
-                print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+                print u"      主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                 
-                Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk, update_time=update_time)
                 status = 'success'
-                print status
                 
             elif 'failed' in result:
                 hostname = 'N/A'
@@ -161,11 +164,8 @@ def getOne(request):
                 disk = 'N/A'
         
                 Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-                print '\n--------------------\ngetOne:'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
-                print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(ip_pub, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+                print u"      主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                 status = 'failed: '+result['msg']
-                print status
 
         for (host, result) in data['dark'].items():
             hostname = 'N/A'
@@ -178,12 +178,17 @@ def getOne(request):
             mem = 'N/A'
             disk = 'N/A'
         
-            Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-            print '\n--------------------\ngetOne:'
-            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
-            print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+            Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system,
+                                                    cpu=cpu, cpu_model=cpu_model,
+                                                    mem=mem, disk=disk, update_time=update_time)
+            print u"      主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
             status = 'failed: '+result['msg']
-            print status
+            
+        if status=='success':
+            print u'收集结果：\033[32m成功\033[0m\n'
+        else:
+            print u'收集结果：\033[31m失败：%s\033[0m\n' % status
+
 
     return HttpResponse(status)
 
@@ -192,17 +197,19 @@ def getAll(request):
     disk = None
     system = None
     update_time = None
+    
     if os.path.isfile('/etc/ansible/hosts_cmdb'): 
         if request.method == 'POST':
+            print '\n--------------------\ngetAll:'
+            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+            print u'step：批量收集资产信息'
             runner = ansible.runner.Runner(
-                module_name='setup', pattern='all', forks='10', host_list='/etc/ansible/hosts_cmdb'
+                module_name='setup', pattern='all', forks='10', host_list=host_list
             )
             data = runner.run()
     
             Asset.objects.all().delete()
     
-            print '\n--------------------\ngetAll:'
-            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
             for (host, result) in data['contacted'].items():
                 local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
                 update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
@@ -231,11 +238,11 @@ def getAll(request):
                     for partation in device:
                         if data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
                             disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
-                    print u"地址为%s的主机名为%s，操作系统为%s ，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+                    print u"%s 的主机名：%s，操作系统：%s ，CPU：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
                     if not Asset.objects.filter(ip_pub=host):
-                        Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+                        Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk)
                     else:
-                        Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                        Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk, update_time=update_time)
     
             for (host, result) in data['contacted'].items():
                 local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
@@ -256,7 +263,7 @@ def getAll(request):
                         Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
                     else:
                         Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-                    print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+                    print u"%s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
     
             for (host, result) in data['dark'].items():
                 local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
@@ -276,7 +283,7 @@ def getAll(request):
                     Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
                 else:
                     Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-                print u"地址为%s的主机名为%s，操作系统为%s，CPU型号：%s，%s核%s线程x%s，内存%sMB，磁盘%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+                print u"%s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
     
             insert_time = Asset.objects.order_by('-update_time')[:1]
     
@@ -300,21 +307,29 @@ def delasset(request):
     filename = '/etc/ansible/hosts_cmdb'
     if request.method == 'POST':
         ip_pub = request.POST['ip_pub']
-        print ip_pub
         username = Host.objects.filter(ip_pub=ip_pub)
+        print '\n--------------------\ndelasset:'
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'删除资产 ', ip_pub
         for user in username:
             content = '%s ansible_ssh_user=%s' % (ip_pub, user.username)
+        print u'step：删除资产信息'
         Asset.objects.filter(ip_pub=ip_pub).delete()
+        print u'step：删除主机信息'
         Host.objects.filter(ip_pub=ip_pub).delete()
         if not Asset.objects.filter(ip_pub=ip_pub):
-            os.system("sed -i '/"+content+"/d' "+filename)
+            info = os.system("sed -i '/"+content+"/d' "+filename)
+            print u'step：删除对应 inventory 条目'
+            if debug=='enabled':
+                print u"      [DEBUG] 执行 sed -i '/%s/d' %s 的结果：%s" % (content, filename, info)
             status = "success"
         else:
             status = "failed"
-        print '\n--------------------\ndelasset:'
-        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
-        print '删除%s，结果:%s' %(content, status)
-
+        
+        if status=="success":
+            print u'删除结果\033[32m成功\033[0m\n'
+        else:
+            print u'删除结果\033[31m失败\033[0m\n'
+        
     return HttpResponse(status) 
 
 @login_required
@@ -375,7 +390,7 @@ def template_add(request):
                 table = data.sheets()[0]
                 nrows = table.nrows
                 print '\n--------------------\ntemplate_add:'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'模版添加'
                 
                 for i in range(1, nrows):
                     data = xlrd.open_workbook(filename)
@@ -383,38 +398,41 @@ def template_add(request):
                     nrows = table.nrows
                     ip_pub = table.row_values(i)[0]
                     ip_prv = table.row_values(i)[1]
-                    username = table.row_values(i)[2]
-                    password = table.row_values(i)[3]   # root密码
+                    username = table.row_values(i)[2]   # 认证用户
+                    password = table.row_values(i)[3]   # 认证密码
                     password_user = table.row_values(i)[4]  # 普通用户密码
-                    pwd_root_encrypt = crypt.do('set', password)
-                    pwd_user_encrypt = crypt.do('set', password_user)
                     print '[%03d] 开始添加 %s' % (num, ip_pub)
-                    if username=='root':
-                        info = hosts_ssh.do_ssh(ip_pub, username, password, debug, flag)
-                    else:
-                        info = hosts_ssh.do_ssh(ip_pub, username, password_user, debug, flag)
+                    pwd_root_encrypt = crypt.do('set', password, debug)
+                    pwd_user_encrypt = crypt.do('set', password_user, debug)
+                    
+                    info = hosts_ssh.do_ssh(ip_pub, username, password, debug, host_list, flag)
+                    
                     if info==u'成功':
                         print '添加结果：\033[32m%s\033[0m' % (info)
                     else:
                         print '添加结果：\033[31m%s\033[0m' % (info)
+                    
                     if not Host.objects.filter(ip_pub=ip_pub):
                         Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username,
                                             pwd_root=pwd_root_encrypt, pwd_user=pwd_user_encrypt, status=info)
                     else:
                         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
                         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
-                        Host.objects.filter(ip_pub=ip_pub).update(username=username, pwd_root=pwd_root_encrypt, pwd_user=pwd_user_encrypt,
-                                                                    status=info, update_time=update_time)
+                        Host.objects.filter(ip_pub=ip_pub).update(username=username,
+                                                                    pwd_root=pwd_root_encrypt,
+                                                                    pwd_user=pwd_user_encrypt,
+                                                                    status=info,
+                                                                    update_time=update_time)
                     flag = 1
                     num+=1
                     print ''
                 status = 'success'
-                print u'\n------添加完成------\n'
+                print u'------添加完成------\n'
                 os.remove(filename)
                 break
             else:
                 print '\n--------------------\ntemplate_add:'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) 
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'模版添加'
                 print u'未发现上传的模版文件，剩余重试次数：%s' % count
                 count-=1
                 time.sleep(1)
@@ -429,30 +447,31 @@ def manual_add(request):
         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
         print '\n--------------------\nmanual_add:'
-        print local_time
+        print local_time, u'手动添加'
         ip_pub = request.POST['ip_pub']
         ip_prv = request.POST['ip_prv']
         username = request.POST['authuser']
         password = request.POST['passw0rd']
         password_user = request.POST['passw0rd1']
+        print u'step：手动添加 %s' % ip_pub
         pwd_root_encrypt = crypt.do('set', password, debug)
         pwd_user_encrypt = crypt.do('set', password_user, debug)
         
         if Host.objects.filter(ip_pub=ip_pub):
             info = u'该IP已存在'
             Host.objects.filter(ip_pub=ip_pub).update(update_time=update_time) 
-            print '\n手动添加 %s，用户名：%s，结果:\033[31m%s\033[0m\n' %(ip_pub, username, info)
+            print '添加结果:\033[31m%s\033[0m\n' % (info)
             return render(request, 'host.html', {'status_warning': info})
         else:
-            info = hosts_ssh.do_ssh(ip_pub, username, password, debug, flag=1)
+            info = hosts_ssh.do_ssh(ip_pub, username, password, debug, host_list, flag=1)
             if info == '成功':
                 Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username,
                                     pwd_root=pwd_root_encrypt, pwd_user=pwd_user_encrypt, status=info)
-                print '\n手动添加 %s，用户名：%s，结果:\033[32m%s\033[0m\n' %(ip_pub, username, info)
+                print '添加结果:\033[32m%s\033[0m\n' %(info)
                 return render(request, 'host.html', {'status_success': info})
             else:
                 #Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username, status=info)
-                print '\n手动添加 %s，用户名：%s，结果:\033[31m%s\033[0m\n' %(ip_pub, username, info)
+                print '添加结果:\033[31m%s\033[0m\n' %(info)
                 return render(request, 'host.html', {'status_warning': info})
         
     else:
@@ -461,14 +480,14 @@ def manual_add(request):
 @login_required
 def delhost(request):
     status = None
-    filename = '/etc/ansible/hosts_cmdb'
+    filename = host_list
     if request.method == 'POST':
         ip_pub = request.POST['ip_pub']
         username = request.POST['username']
         content = '%s ansible_ssh_user=%s' % (ip_pub, username)
         
         print '\n--------------------\ndelhost:'
-        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'删除主机'
         print u'step：删除%s' %(ip_pub)
         
         Host.objects.filter(ip_pub=ip_pub).delete()
@@ -517,10 +536,10 @@ def check_host(request):
     if request.method == 'POST':
         ip_pub = request.POST['ip_pub']
         print '\n--------------------\ncheck_host:'
-        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'检测主机状态'
         print u'step：检测%s' % ip_pub
         runner = ansible.runner.Runner(
-            module_name='ping', pattern=ip_pub, host_list='/etc/ansible/hosts_cmdb'
+            module_name='ping', pattern=ip_pub, host_list=host_list
         )
         data = runner.run()
         if debug=='enabled':
@@ -561,20 +580,20 @@ def UpdatePwd(request):
     print u'step：生成 %s %s 用户的新密码' % (ip, username)
     if debug=='enabled':
         print u'      [DEBUG] %s %s 用户的新密码：%s' % (ip, username, pwd_generate)
-    pwd_update = update_pwd.do(username, ip, transfer.do(pwd_generate))
+    pwd_update = update_pwd.do(username, ip, transfer.do(pwd_generate), debug)
     # if pwd_update=='success':
         
     if pwd_update == 'success':
         print u'      结果：\033[32m成功\033[0m'
         print u'step：对密码进行加密存储'
-        pwd_crypt = crypt.do('set', transfer.do(pwd_generate), debug)
+        pwd_crypt = crypt.do('set', pwd_generate, debug)
         if debug=='enabled':
             print u'      [DEBUG] 加密前密码：%s' % (pwd_generate)
             print u'              加密后密码：%s' % (pwd_crypt)
         if pwd_crypt=='error':
             status = 'failed'
             print u'      结果：\033[31m存储失败!\033[0m'
-            print u'\033[31m------更新失败------\033[0m\n'
+            print u'更新结果：\033[31m失败\033[0m\n'
         else:
             status = 'success'
             host_pwd = Host.objects.get(ip_pub=ip)
@@ -583,11 +602,10 @@ def UpdatePwd(request):
             else:
                 host_pwd.pwd_user = pwd_crypt
             host_pwd.save()
-            print u'      结果：\033[32m成功\033[0m'
-            print u'------更新完成------\n'
+            print u'更新结果：\033[32m成功\033[0m\n'
     else:
         status = 'failed'
-        print u'\033[31m------更新失败------\033[0m\n'
+        print u'更新结果：\033[31m失败\033[0m\n'
 
     return HttpResponse(status)
 
@@ -598,8 +616,8 @@ def UpdatePwd(request):
 def export_host(request):
     global export_host_filename
     status = []
-    export_host_filename = sys.path[0]+'/media/'+time.strftime('%Y-%m-%d-%H-%M', time.localtime())+'.xls'
-    headers = (u'公网IP', u'内网IP', u'root密码', u'普通用户密码')  # 0,1,3,4
+    export_host_filename = sys.path[0]+'/media/'+time.strftime('host-%Y-%m-%d-%H-%M', time.localtime())+'.xls'
+    headers = (u'公网IP', u'内网IP', u'root密码', u'wwwuser密码')  # 0,1,3,4
     print u'\n--------------------\nexport_host:' 
     print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'导出 host 列表'
     
@@ -659,6 +677,59 @@ def export_host(request):
     
     return JsonResponse(status, safe=False)
 
+@login_required
+def export_asset(request):
+    global export_asset_filename
+    status = []
+    export_asset_filename = sys.path[0]+'/media/'+time.strftime('asset-%Y-%m-%d-%H-%M', time.localtime())+'.xls'
+    headers = (u'IP地址', u'主机名', u'操作系统', u'CPU型号', u'CPU', u'内存', u'硬盘', u'最后更新时间')
+    print u'\n--------------------\nexport_asset:' 
+    print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'导出 asset 列表'
+    
+    try:
+        dataset = AssetResource().export() 
+        workbook = xlwt.Workbook(encoding = 'utf-8')
+        worksheet = workbook.add_sheet('sheet01')
+        # style = xlwt.XFStyle()
+        # font = xlwt.Font()
+        # font.name = u'宋体'
+        # font.bold = True
+        # style.font = font
+        
+        for i in range(0, len(headers)):
+            worksheet.write(0, i, headers[i])
+        
+        rows = len(dataset)
+        line = len(dataset[0])
+        row = 1
+        
+        
+        for each in dataset:
+            print u'step：获取第%s条信息' % row
+            
+            for j in range(0, line):
+                content = each[j]
+                # print 'col', j
+                # print 'each[k]', each[j]
+                worksheet.write(row, j, content.replace('\n', ''))
+            print u'step：写入第%s条信息\n' % row
+            row += 1
+            
+        workbook.save(export_asset_filename)
+        if os.path.isfile(export_asset_filename):
+            status.append('success')
+            status.append(export_asset_filename)
+        else:
+            status.append('failed')
+    except Exception as e:
+        status.append('failed')
+        status.append(e)
+
+    print u'导出结果：%s\n' % status
+    print u'-----导出完成------\n'
+    
+    return JsonResponse(status, safe=False)
+
     
 @login_required
 def download_host(request):
@@ -679,6 +750,24 @@ def download_host(request):
         print u'结果：文件不存在！'
         return render(request, 'host.html', {'error': u'文件不存在！'})
 
+@login_required
+def download_asset(request):
+    print u'\n--------------------\ndownload_asset:' 
+    print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'下载 asset 列表'
+    print u'step：检查文件是否存在'
+    if os.path.isfile(export_asset_filename):
+        print u'step：文件存在，开始解析'
+        f = open(export_asset_filename)
+        data = f.read()
+        f.close()
+        response = HttpResponse(data) 
+        response['Content-Disposition'] = 'attachment; filename=%s' % export_asset_filename.split('/')[-1]
+        print u'step：解析完成，删除文件'
+        os.remove(export_asset_filename)
+        return response
+    else:
+        print u'结果：文件不存在！'
+        return render(request, 'host.html', {'error': u'文件不存在！'})
     
 
 def loginview(request):

@@ -475,6 +475,30 @@
         })
     })
     
+
+    $(function(){
+        $('#exportasset').click(function(){
+            $.ajax({
+                url: '/export/asset/',
+                <!-- data: {'ip': ip, 'username': username}, -->
+                type: 'post',
+                headers: {'X-CSRFtoken': $.cookie('csrftoken')},
+                success: function(status){
+                    if (status[0]=='success'){
+                        console.log(status[0]);
+                        $("#status-success").html("<span>导出成功，<a href='/download/asset/'>点我下载</a></span>");
+                        $("#success").css('display', 'block');
+                    }
+                    else{
+                        console.log(status);
+                        $("#status-warning").text('Error：导出失败：'+status[1]);
+                        $("#warning").css('display', 'block');
+                    }
+                }
+            })
+        })
+    })
+    
     </script>
     
     <!-- END JAVASCRIPTS -->

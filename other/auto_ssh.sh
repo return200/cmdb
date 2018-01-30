@@ -6,7 +6,7 @@ set pwd [lindex $argv 2]
 
 set timeout 3
 
-spawn ssh-copy-id -i /root/.ssh/id_rsa.pub ${user}@${host}
+spawn ssh-copy-id -f -i /root/.ssh/id_rsa.pub ${user}@${host}
 
 expect {
   "(yes/no)?" {

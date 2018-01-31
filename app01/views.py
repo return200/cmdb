@@ -9,6 +9,7 @@ import xlwt
 import random
 import ConfigParser
 
+from multiprocessing import Pool
 from django.shortcuts import render
 from django.http.response import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.db.models import Q
@@ -18,7 +19,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from pure_pagination import Paginator, EmptyPage, PageNotAnInteger
 from app01.models import Asset, Host
-from other import hosts_ssh, hosts_file, chk_ip, crypt, update_pwd, transfer
+from other import hosts_ssh, hosts_file, chk_ip, crypt, update_pwd, transfer, getall
 from other.export import HostResource, AssetResource
 
 import ansible.runner
@@ -27,9 +28,11 @@ import ansible.runner
 
 try:
     global debug, password_length, host_list
+    # global debug, password_length, host_list, max_processes
     config = ConfigParser.ConfigParser()
     config.read('%s/conf/cmdb.conf' % sys.path[0]) 
     debug = config.get('base', 'debug')
+    # max_processes = config.get('base', 'max_processes')
     password_length = config.get('base', 'password_length')
     host_list = config.get('base', 'host_list')
     if debug=='enabled':
@@ -192,114 +195,196 @@ def getOne(request):
 
     return HttpResponse(status)
 
+    
 @login_required
 def getAll(request):
     disk = None
     system = None
     update_time = None
+    count = 001
+    global done
+    done = 0
     
-    if os.path.isfile('/etc/ansible/hosts_cmdb'): 
+    def save_data(x):
+        if not Asset.objects.filter(ip_pub=x[0]):
+            Asset.objects.create(ip_pub=x[0], hostname=x[1], os=x[2], cpu=x[3], cpu_model=x[4], mem=x[5], disk=x[6])
+        else:
+            Asset.objects.filter(ip_pub=x[0]).update(hostname=x[1], os=x[2], cpu=x[3], cpu_model=x[4], mem=x[5], disk=x[6])
+    
+    if os.path.isfile(host_list): 
         if request.method == 'POST':
             print '\n--------------------\ngetAll:'
-            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-            print u'step：批量收集资产信息'
-            runner = ansible.runner.Runner(
-                module_name='setup', pattern='all', forks='10', host_list=host_list
-            )
-            data = runner.run()
+            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'step：批量收集资产信息'
+            print u'step：清空资产列表'
+            try:
+                Asset.objects.all().delete()
+            except Exception as e:
+                update_time = e
+                return HttpResponse(update_time)
+            print u'step：读取 inventory 列表：%s' % host_list
+            with open(host_list, 'r+') as f:
+                global all_host
+                all_host = f.readlines()
+            
+            # print u'顺序执行开始', time.strftime('%H:%M:%S', time.localtime())
+            # before = time.time()
+            # print u'step：开始批量收集'
+            # for each in all_host:
+                # # res.append(do(each))
+                # each = each.split(' ')[0]
+                # getall.do(each, host_list, count)
+                # count+=1
+            # # for line in res:
+                # # print line
+            # print u'顺序执行结束', time.strftime('%H:%M:%S', time.localtime())
+            # after = time.time()
+            # use = after-before
+            # print u'耗时 ', use
+            
+            # count = 001
+            print u'step：开始批量收集'
+            if debug=='enabled':
+                print u'      [DEBUG] 并发执行开始 %s' % (time.strftime('%H:%M:%S', time.localtime()))
+                # print u'      [DEBUG] 并发执行开始 %s，进程数：%s' % (time.strftime('%H:%M:%S', time.localtime()), max_processes)
+                before = time.time()
+            pool = Pool(processes=5)
+            for each in all_host:
+                each = each.split(' ')[0]
+                pool.apply_async(getall.do, args=(each, host_list, count), callback=save_data)
+                count+=1
+                done+=1
+                # time.sleep(2)
+            pool.close()
+            pool.join()
+            
+            if debug=='enabled':
+                print u'      [DEBUG] 并发执行结束', time.strftime('%H:%M:%S', time.localtime())
+                after = time.time()
+                use = after-before
+                print u'      [DEBUG] 耗时 ', use
+            
+            print u'------批量收集完成------\n'
+            
+            return HttpResponse(update_time)
+            
+# def getAll(request):
+    # disk = None
+    # system = None
+    # update_time = None
     
-            Asset.objects.all().delete()
+    # if os.path.isfile(host_list): 
+        # if request.method == 'POST':
+            # print '\n--------------------\ngetAll:'
+            # print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+            # print u'step：批量收集资产信息'
+            # runner = ansible.runner.Runner(
+                # module_name='setup', pattern='all', forks='10', host_list=host_list
+            # )
+            # data = runner.run()
     
-            for (host, result) in data['contacted'].items():
-                local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-                update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+            # Asset.objects.all().delete()
+    
+            # for (host, result) in data['contacted'].items():
+                # local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+                # update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
                 
-                if not 'failed' in result:
-                   # ip = data['contacted'][host]['ansible_facts']['ansible_default_ipv4']['address']
-                   # if chk_ip.do(ip) == 'matched':
-                   #     ip = ip
-                    hostname = data['contacted'][host]['ansible_facts']['ansible_hostname']
-                    if 'ansible_lsb' in data['contacted'][host]['ansible_facts'].keys():
-                        system = data['contacted'][host]['ansible_facts']['ansible_lsb']['description']
-                    elif 'ansible_distribution' in data['contacted'][host]['ansible_facts'].keys():
-                        distribution = data['contacted'][host]['ansible_facts']['ansible_distribution']
-                        distribution_major = data['contacted'][host]['ansible_facts']['ansible_distribution_version']
-                        system = ' '.join([distribution, distribution_major])
-                    cpu_core = data['contacted'][host]['ansible_facts']['ansible_processor_cores']
-                    #单颗的核数
-                    cpu_thread = data['contacted'][host]['ansible_facts']['ansible_processor_threads_per_core']
-                    #单核的线程数
-                    cpu_count = data['contacted'][host]['ansible_facts']['ansible_processor_count']
-                    #颗数
-                    cpu = "%s核%s线程 x %s" %(cpu_core, cpu_thread, cpu_count)
-                    cpu_model = data['contacted'][host]['ansible_facts']['ansible_processor'][-1]
-                    mem = data['contacted'][host]['ansible_facts']['ansible_memtotal_mb']
-                    device = data['contacted'][host]['ansible_facts']['ansible_devices'].keys()
-                    for partation in device:
-                        if data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
-                            disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
-                    print u"%s 的主机名：%s，操作系统：%s ，CPU：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-                    if not Asset.objects.filter(ip_pub=host):
-                        Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk)
-                    else:
-                        Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk, update_time=update_time)
+                # if not 'failed' in result:
+                   # # ip = data['contacted'][host]['ansible_facts']['ansible_default_ipv4']['address']
+                   # # if chk_ip.do(ip) == 'matched':
+                   # #     ip = ip
+                    # hostname = data['contacted'][host]['ansible_facts']['ansible_hostname']
+                    # if 'ansible_lsb' in data['contacted'][host]['ansible_facts'].keys():
+                        # system = data['contacted'][host]['ansible_facts']['ansible_lsb']['description']
+                    # elif 'ansible_distribution' in data['contacted'][host]['ansible_facts'].keys():
+                        # distribution = data['contacted'][host]['ansible_facts']['ansible_distribution']
+                        # distribution_major = data['contacted'][host]['ansible_facts']['ansible_distribution_version']
+                        # system = ' '.join([distribution, distribution_major])
+                    # cpu_core = data['contacted'][host]['ansible_facts']['ansible_processor_cores']
+                    # #单颗的核数
+                    # cpu_thread = data['contacted'][host]['ansible_facts']['ansible_processor_threads_per_core']
+                    # #单核的线程数
+                    # cpu_count = data['contacted'][host]['ansible_facts']['ansible_processor_count']
+                    # #颗数
+                    # cpu = "%s核%s线程 x %s" %(cpu_core, cpu_thread, cpu_count)
+                    # cpu_model = data['contacted'][host]['ansible_facts']['ansible_processor'][-1]
+                    # mem = data['contacted'][host]['ansible_facts']['ansible_memtotal_mb']
+                    # device = data['contacted'][host]['ansible_facts']['ansible_devices'].keys()
+                    # for partation in device:
+                        # if data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
+                            # disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
+                    # print u"%s 的主机名：%s，操作系统：%s ，CPU：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+                    # if not Asset.objects.filter(ip_pub=host):
+                        # Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk)
+                    # else:
+                        # Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk, update_time=update_time)
     
-            for (host, result) in data['contacted'].items():
-                local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-                update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+            # for (host, result) in data['contacted'].items():
+                # local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+                # update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
     
-                if 'failed' in result:
-                    hostname = 'N/A'
-                    system = 'N/A'
-                    cpu_core = 'N/A'
-                    cpu_thread = 'N/A'
-                    cpu_count = 'N/A'
-                    cpu = 'N/A'
-                    cpu_model = 'N/A'
-                    mem = 'N/A'
-                    disk = 'N/A'
+                # if 'failed' in result:
+                    # hostname = 'N/A'
+                    # system = 'N/A'
+                    # cpu_core = 'N/A'
+                    # cpu_thread = 'N/A'
+                    # cpu_count = 'N/A'
+                    # cpu = 'N/A'
+                    # cpu_model = 'N/A'
+                    # mem = 'N/A'
+                    # disk = 'N/A'
     
-                    if not Asset.objects.filter(ip_pub=host):
-                        Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
-                    else:
-                        Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-                    print u"%s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+                    # if not Asset.objects.filter(ip_pub=host):
+                        # Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+                    # else:
+                        # Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                    # print u"%s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
     
-            for (host, result) in data['dark'].items():
-                local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-                update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+            # for (host, result) in data['dark'].items():
+                # local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+                # update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
     
-                hostname = 'N/A'
-                system = 'N/A'
-                cpu_core = 'N/A'
-                cpu_thread = 'N/A'
-                cpu_count = 'N/A'
-                cpu = 'N/A'
-                cpu_model = 'N/A'
-                mem = 'N/A'
-                disk = 'N/A'
+                # hostname = 'N/A'
+                # system = 'N/A'
+                # cpu_core = 'N/A'
+                # cpu_thread = 'N/A'
+                # cpu_count = 'N/A'
+                # cpu = 'N/A'
+                # cpu_model = 'N/A'
+                # mem = 'N/A'
+                # disk = 'N/A'
          
-                if not Asset.objects.filter(ip_pub=host):
-                    Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
-                else:
-                    Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-                print u"%s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+                # if not Asset.objects.filter(ip_pub=host):
+                    # Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+                # else:
+                    # Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+                # print u"%s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
     
-            insert_time = Asset.objects.order_by('-update_time')[:1]
+            # insert_time = Asset.objects.order_by('-update_time')[:1]
     
-            if insert_time:
-                for update_time in insert_time:
-                    update_time = update_time.update_time 
-        #            print update_time
-            else:
-                update_time = u'未更新'
+            # if insert_time:
+                # for update_time in insert_time:
+                    # update_time = update_time.update_time 
+        # #            print update_time
+            # else:
+                # update_time = u'未更新'
 
-        return HttpResponse(update_time)
-    else:
-        update_time = u'未更新'
+        # return HttpResponse(update_time)
+    # else:
+        # update_time = u'未更新'
 
-        return HttpResponse(update_time)
+        # return HttpResponse(update_time)
 
+@login_required
+def percentage(request):
+    percent = {}
+    percent['done'] = done
+    percent['all_host'] = len(all_host)
+    
+    # print percent
+    
+    return JsonResponse(percent, safe=False)
+        
+        
 @login_required
 def delasset(request):
     status = None

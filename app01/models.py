@@ -11,7 +11,7 @@ import datetime, time
 class Asset(models.Model):
     ip_pub = models.GenericIPAddressField(max_length=50, verbose_name=u'外网IP地址')
     #ip_prv = models.GenericIPAddressField(max_length=50, verbose_name=u'内网IP地址')
-    hostname = models.CharField(max_length=20, verbose_name=u'主机名')
+    hostname = models.CharField(max_length=50, verbose_name=u'主机名')
     os = models.CharField(max_length=50, verbose_name=u'操作系统')
     cpu_model = models.CharField(max_length=50, verbose_name=u'CPU型号')
     cpu = models.CharField(max_length=50, verbose_name=u'CPU')

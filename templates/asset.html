@@ -63,7 +63,7 @@
     {% for each in info.object_list %}
     <tr>
         <td name="ip">{{ each.ip_pub }}</td>
-        <td>{{ each.hostname }}</td>
+        <td title={{ each.hostname }}>{{ each.hostname | truncatechars:"25" }}</td>
         <td>{{ each.os }}</td>
         <td>{{ each.cpu_model }}</td>
         <td>{{ each.cpu }}</td>

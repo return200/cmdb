@@ -41,5 +41,6 @@ urlpatterns = [
     url(r'^pwd/update/$', views.UpdatePwd),
     url(r'^export/host/$', views.export_host),
     url(r'^export/asset/$', views.export_asset),
+    url(r'^percentage/$', views.percentage),
     
 ]

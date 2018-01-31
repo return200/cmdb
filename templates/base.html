@@ -175,8 +175,25 @@
         });
     }
 	
+    function getPercentage(){
+        $.ajax({
+            url: "/percentage/",
+            type: "post",
+            headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+            success:function(percent){
+                $("#renew").text('更新中 '+percent['done']+'/'+percent['all_host']);
+                console.log('已完成：', percent['done']);
+                console.log('总共：', percent['all_host']);
+            }
+        });
+    }
+    
     $("#renew").click(function(a){
-        console.log('renew');
+        console.log('批量更新中。。。');
+        $("#success").hide();
+        $("#warning").hide();
+        $("#info").hide();
+        var percent = setInterval(getPercentage, 1000);
         $.ajax({
             url: "/getall/",
             type: "post",
@@ -187,15 +204,18 @@
                     document.getElementById('update_time').innerText=update_time;
                     $("#status-success").text('更新完成：'+update_time);
                     $("#success").show();
+                    window.clearInterval(percent);
+                    $("#renew").text('批量更新');
                 }
                 else{
                     $("#status-warning").text('更新失败');
-                    $("#warning").show(); 
+                    $("#warning").show();
                 }
             }
         });
-        $("#status-info").html('更新中，稍后 <strong><a href="/">刷新</a></strong> 页面！');
-        $("#info").show();
+        $("#renew").text('更新中');
+        <!-- $("#status-info").html('更新中，稍后 <strong><a href="/">刷新</a></strong> 页面！'); -->
+        <!-- $("#info").show(); -->
     })
     
     function renew_this(that){

@@ -27,7 +27,6 @@ import ansible.runner
 # Create your views here.
 
 try:
-    # global debug, password_length, host_list
     global debug, password_length, host_list, max_processes
     config = ConfigParser.ConfigParser()
     config.read('%s/conf/cmdb.conf' % sys.path[0]) 
@@ -246,7 +245,6 @@ def getAll(request):
             # count = 001
             print u'step：开始批量收集'
             if debug=='enabled':
-                # print u'      [DEBUG] 并发执行开始 %s' % (time.strftime('%H:%M:%S', time.localtime()))
                 print u'      [DEBUG] 并发执行开始 %s，进程数：%s' % (time.strftime('%H:%M:%S', time.localtime()), max_processes)
                 before = time.time()
             pool = Pool(processes=int(max_processes))
@@ -402,7 +400,6 @@ def template_add(request):
                 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'模版添加主机'
                 print u'step：开始批量添加'
                 if debug=='enabled':
-                    # print u'      [DEBUG] 并发执行开始 %s' % (time.strftime('%H:%M:%S', time.localtime()))
                     print u'      [DEBUG] 并发执行开始 %s，进程数：%s' % (time.strftime('%H:%M:%S', time.localtime()), max_processes)
                     before = time.time()
                     
@@ -411,6 +408,46 @@ def template_add(request):
                 for i in range(1, nrows):
                     pool.apply_async(templateAdd.do, args=(i, filename, debug, host_list, flag), callback=save)
                     # time.sleep(2)
+                    flag = 1
+                    num+=1
+                pool.close()
+                pool.join()
+                status = 'success'
+                if debug=='enabled':
+                    print u'      [DEBUG] 并发执行结束', time.strftime('%H:%M:%S', time.localtime())
+                    after = time.time()
+                    use = after-before
+                    print u'      [DEBUG] 耗时 ', use
+                print u'------添加完成------\n'
+                os.remove(filename)
+                break
+            else:
+                print '\n--------------------\ntemplate_add:'
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'模版添加'
+                print u'未发现上传的模版文件，剩余重试次数：%s' % count
+                count-=1
+                time.sleep(1)
+                status = u'未发现上传的模版文件!'
+
+    return HttpResponse(status)
+
+# def template_add(request):
+    # flag = 0
+    # count = 5
+    # num = 001
+    # filename = sys.path[0]+'/upload/template.xls'
+    
+    # if request.method == 'POST':
+        # while count>0:
+            # if os.path.isfile(filename):
+                # data = xlrd.open_workbook(filename)
+                # table = data.sheets()[0]
+                # nrows = table.nrows
+                # print '\n--------------------\ntemplate_add:'
+                # print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'模版添加主机'
+                # print u'step：开始批量添加'
+                
+                # for i in range(1, nrows):
                     # # data = xlrd.open_workbook(filename)
                     # # table = data.sheets()[0]
                     # # nrows = table.nrows
@@ -441,24 +478,23 @@ def template_add(request):
                                                                     # pwd_user=pwd_user_encrypt,
                                                                     # status=info,
                                                                     # update_time=update_time)
-                    flag = 1
-                    num+=1
-                pool.close()
-                pool.join()
-                status = 'success'
-                print u'------添加完成------\n'
-                os.remove(filename)
-                break
-            else:
-                print '\n--------------------\ntemplate_add:'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'模版添加'
-                print u'未发现上传的模版文件，剩余重试次数：%s' % count
-                count-=1
-                time.sleep(1)
-                status = u'未发现上传的模版文件!'
+                    # flag = 1
+                    # num+=1
+                # status = 'success'
+                # print u'------添加完成------\n'
+                # os.remove(filename)
+                # break
+            # else:
+                # print '\n--------------------\ntemplate_add:'
+                # print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'模版添加'
+                # print u'未发现上传的模版文件，剩余重试次数：%s' % count
+                # count-=1
+                # time.sleep(1)
+                # status = u'未发现上传的模版文件!'
 
-    return HttpResponse(status)
-
+    # return HttpResponse(status)
+    
+    
 @login_required
 def template_add_percentage(request):
     percent = {}

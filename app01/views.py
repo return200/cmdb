@@ -19,7 +19,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from pure_pagination import Paginator, EmptyPage, PageNotAnInteger
 from app01.models import Asset, Host
-from other import hosts_ssh, hosts_file, chk_ip, crypt, update_pwd, transfer, getall
+from other import hosts_ssh, hosts_file, chk_ip, crypt, update_pwd, transfer, getall, templateAdd
 from other.export import HostResource, AssetResource
 
 import ansible.runner
@@ -27,24 +27,27 @@ import ansible.runner
 # Create your views here.
 
 try:
-    global debug, password_length, host_list
-    # global debug, password_length, host_list, max_processes
+    # global debug, password_length, host_list
+    global debug, password_length, host_list, max_processes
     config = ConfigParser.ConfigParser()
     config.read('%s/conf/cmdb.conf' % sys.path[0]) 
     debug = config.get('base', 'debug')
-    # max_processes = config.get('base', 'max_processes')
+    max_processes = config.get('base', 'max_processes')
     password_length = config.get('base', 'password_length')
     host_list = config.get('base', 'host_list')
     if debug=='enabled':
         print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
         print '!!!!!!!!! DEBUG MODE ON !!!!!!!!!'
         print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-    else:
+    elif debug=='disabled':
         print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
         print '!!!!!!!! DEBUG MODE OFF !!!!!!!!!'
         print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    else:
+        raise Exception('debug 选项错误[ enabled | disabled ]')
 except Exception as e:
-    print u'！！！cmdb.conf 读取失败！！！'
+    print u'\033[31m！！！cmdb.conf 读取失败！！！\033[0m'
+    print '\033[31m%s\033[0m\n' % e
 
 @login_required
 def asset(request):
@@ -201,20 +204,19 @@ def getAll(request):
     disk = None
     system = None
     update_time = None
-    count = 001
     global done
     done = 0
     
-    def save_data(x):
+    def save(x):
         if not Asset.objects.filter(ip_pub=x[0]):
             Asset.objects.create(ip_pub=x[0], hostname=x[1], os=x[2], cpu=x[3], cpu_model=x[4], mem=x[5], disk=x[6])
         else:
-            Asset.objects.filter(ip_pub=x[0]).update(hostname=x[1], os=x[2], cpu=x[3], cpu_model=x[4], mem=x[5], disk=x[6])
+            Asset.objects.filter(ip_pub=x[0]).update(hostname=x[1], os=x[2], cpu=x[3], cpu_model=x[4], mem=x[5], disk=x[6], update_time=x[7])
     
     if os.path.isfile(host_list): 
         if request.method == 'POST':
             print '\n--------------------\ngetAll:'
-            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'step：批量收集资产信息'
+            print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'批量收集资产信息'
             print u'step：清空资产列表'
             try:
                 Asset.objects.all().delete()
@@ -244,14 +246,13 @@ def getAll(request):
             # count = 001
             print u'step：开始批量收集'
             if debug=='enabled':
-                print u'      [DEBUG] 并发执行开始 %s' % (time.strftime('%H:%M:%S', time.localtime()))
-                # print u'      [DEBUG] 并发执行开始 %s，进程数：%s' % (time.strftime('%H:%M:%S', time.localtime()), max_processes)
+                # print u'      [DEBUG] 并发执行开始 %s' % (time.strftime('%H:%M:%S', time.localtime()))
+                print u'      [DEBUG] 并发执行开始 %s，进程数：%s' % (time.strftime('%H:%M:%S', time.localtime()), max_processes)
                 before = time.time()
-            pool = Pool(processes=5)
+            pool = Pool(processes=int(max_processes))
             for each in all_host:
                 each = each.split(' ')[0]
-                pool.apply_async(getall.do, args=(each, host_list, count), callback=save_data)
-                count+=1
+                pool.apply_async(getall.do, args=(each, host_list, debug), callback=save)
                 done+=1
                 # time.sleep(2)
             pool.close()
@@ -265,117 +266,20 @@ def getAll(request):
             
             print u'------批量收集完成------\n'
             
+            insert_time = Asset.objects.order_by('-update_time')[:1]
+
+            if insert_time:
+                for update_time in insert_time:
+                    update_time = update_time.update_time 
+        #            print update_time
+            else:
+                update_time = u'未更新'
+                
             return HttpResponse(update_time)
             
-# def getAll(request):
-    # disk = None
-    # system = None
-    # update_time = None
-    
-    # if os.path.isfile(host_list): 
-        # if request.method == 'POST':
-            # print '\n--------------------\ngetAll:'
-            # print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-            # print u'step：批量收集资产信息'
-            # runner = ansible.runner.Runner(
-                # module_name='setup', pattern='all', forks='10', host_list=host_list
-            # )
-            # data = runner.run()
-    
-            # Asset.objects.all().delete()
-    
-            # for (host, result) in data['contacted'].items():
-                # local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-                # update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
-                
-                # if not 'failed' in result:
-                   # # ip = data['contacted'][host]['ansible_facts']['ansible_default_ipv4']['address']
-                   # # if chk_ip.do(ip) == 'matched':
-                   # #     ip = ip
-                    # hostname = data['contacted'][host]['ansible_facts']['ansible_hostname']
-                    # if 'ansible_lsb' in data['contacted'][host]['ansible_facts'].keys():
-                        # system = data['contacted'][host]['ansible_facts']['ansible_lsb']['description']
-                    # elif 'ansible_distribution' in data['contacted'][host]['ansible_facts'].keys():
-                        # distribution = data['contacted'][host]['ansible_facts']['ansible_distribution']
-                        # distribution_major = data['contacted'][host]['ansible_facts']['ansible_distribution_version']
-                        # system = ' '.join([distribution, distribution_major])
-                    # cpu_core = data['contacted'][host]['ansible_facts']['ansible_processor_cores']
-                    # #单颗的核数
-                    # cpu_thread = data['contacted'][host]['ansible_facts']['ansible_processor_threads_per_core']
-                    # #单核的线程数
-                    # cpu_count = data['contacted'][host]['ansible_facts']['ansible_processor_count']
-                    # #颗数
-                    # cpu = "%s核%s线程 x %s" %(cpu_core, cpu_thread, cpu_count)
-                    # cpu_model = data['contacted'][host]['ansible_facts']['ansible_processor'][-1]
-                    # mem = data['contacted'][host]['ansible_facts']['ansible_memtotal_mb']
-                    # device = data['contacted'][host]['ansible_facts']['ansible_devices'].keys()
-                    # for partation in device:
-                        # if data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
-                            # disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
-                    # print u"%s 的主机名：%s，操作系统：%s ，CPU：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-                    # if not Asset.objects.filter(ip_pub=host):
-                        # Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk)
-                    # else:
-                        # Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk, update_time=update_time)
-    
-            # for (host, result) in data['contacted'].items():
-                # local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-                # update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
-    
-                # if 'failed' in result:
-                    # hostname = 'N/A'
-                    # system = 'N/A'
-                    # cpu_core = 'N/A'
-                    # cpu_thread = 'N/A'
-                    # cpu_count = 'N/A'
-                    # cpu = 'N/A'
-                    # cpu_model = 'N/A'
-                    # mem = 'N/A'
-                    # disk = 'N/A'
-    
-                    # if not Asset.objects.filter(ip_pub=host):
-                        # Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
-                    # else:
-                        # Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-                    # print u"%s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-    
-            # for (host, result) in data['dark'].items():
-                # local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-                # update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
-    
-                # hostname = 'N/A'
-                # system = 'N/A'
-                # cpu_core = 'N/A'
-                # cpu_thread = 'N/A'
-                # cpu_count = 'N/A'
-                # cpu = 'N/A'
-                # cpu_model = 'N/A'
-                # mem = 'N/A'
-                # disk = 'N/A'
-         
-                # if not Asset.objects.filter(ip_pub=host):
-                    # Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
-                # else:
-                    # Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-                # print u"%s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-    
-            # insert_time = Asset.objects.order_by('-update_time')[:1]
-    
-            # if insert_time:
-                # for update_time in insert_time:
-                    # update_time = update_time.update_time 
-        # #            print update_time
-            # else:
-                # update_time = u'未更新'
-
-        # return HttpResponse(update_time)
-    # else:
-        # update_time = u'未更新'
-
-        # return HttpResponse(update_time)
 
 @login_required
-def percentage(request):
+def getAll_percentage(request):
     percent = {}
     percent['done'] = done
     percent['all_host'] = len(all_host)
@@ -466,51 +370,81 @@ def upload(request):
 def template_add(request):
     flag = 0
     count = 5
-    num = 001
+    global num
+    num = 1
     filename = sys.path[0]+'/upload/template.xls'
+    
+    def save(x):
+        if not Host.objects.filter(ip_pub=x[0]):
+            Host.objects.create(ip_pub=x[0],
+                                ip_prv=x[1],
+                                username=x[2],
+                                pwd_root=x[3],
+                                pwd_user=x[4],
+                                status=x[5])
+        else:
+            local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+            update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+            Host.objects.filter(ip_pub=x[0]).update(username=x[2],
+                                                        pwd_root=x[3],
+                                                        pwd_user=x[4],
+                                                        status=x[5],
+                                                        update_time=update_time)
+    
     if request.method == 'POST':
         while count>0:
             if os.path.isfile(filename):
                 data = xlrd.open_workbook(filename)
                 table = data.sheets()[0]
+                global nrows
                 nrows = table.nrows
                 print '\n--------------------\ntemplate_add:'
-                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'模版添加'
+                print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), u'模版添加主机'
+                print u'step：开始批量添加'
+                if debug=='enabled':
+                    # print u'      [DEBUG] 并发执行开始 %s' % (time.strftime('%H:%M:%S', time.localtime()))
+                    print u'      [DEBUG] 并发执行开始 %s，进程数：%s' % (time.strftime('%H:%M:%S', time.localtime()), max_processes)
+                    before = time.time()
+                    
+                pool = Pool(processes=int(max_processes))
                 
                 for i in range(1, nrows):
-                    data = xlrd.open_workbook(filename)
-                    table = data.sheets()[0]
-                    nrows = table.nrows
-                    ip_pub = table.row_values(i)[0]
-                    ip_prv = table.row_values(i)[1]
-                    username = table.row_values(i)[2]   # 认证用户
-                    password = table.row_values(i)[3]   # 认证密码
-                    password_user = table.row_values(i)[4]  # 普通用户密码
-                    print '[%03d] 开始添加 %s' % (num, ip_pub)
-                    pwd_root_encrypt = crypt.do('set', password, debug)
-                    pwd_user_encrypt = crypt.do('set', password_user, debug)
+                    pool.apply_async(templateAdd.do, args=(i, filename, debug, host_list, flag), callback=save)
+                    # time.sleep(2)
+                    # # data = xlrd.open_workbook(filename)
+                    # # table = data.sheets()[0]
+                    # # nrows = table.nrows
+                    # ip_pub = table.row_values(i)[0]
+                    # ip_prv = table.row_values(i)[1]
+                    # username = table.row_values(i)[2]   # 认证用户
+                    # password = table.row_values(i)[3]   # 认证密码
+                    # password_user = table.row_values(i)[4]  # 普通用户密码
+                    # print '[%03d] 开始添加 %s' % (num, ip_pub)
+                    # pwd_root_encrypt = crypt.do('set', password, debug)
+                    # pwd_user_encrypt = crypt.do('set', password_user, debug)
                     
-                    info = hosts_ssh.do_ssh(ip_pub, username, password, debug, host_list, flag)
+                    # info = hosts_ssh.do_ssh(ip_pub, username, password, debug, host_list, flag)
                     
-                    if info==u'成功':
-                        print '添加结果：\033[32m%s\033[0m' % (info)
-                    else:
-                        print '添加结果：\033[31m%s\033[0m' % (info)
+                    # if info==u'成功':
+                        # print '添加结果：\033[32m%s\033[0m' % (info)
+                    # else:
+                        # print '添加结果：\033[31m%s\033[0m' % (info)
                     
-                    if not Host.objects.filter(ip_pub=ip_pub):
-                        Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username,
-                                            pwd_root=pwd_root_encrypt, pwd_user=pwd_user_encrypt, status=info)
-                    else:
-                        local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-                        update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
-                        Host.objects.filter(ip_pub=ip_pub).update(username=username,
-                                                                    pwd_root=pwd_root_encrypt,
-                                                                    pwd_user=pwd_user_encrypt,
-                                                                    status=info,
-                                                                    update_time=update_time)
+                    # if not Host.objects.filter(ip_pub=ip_pub):
+                        # Host.objects.create(ip_pub=ip_pub, ip_prv=ip_prv, username=username,
+                                            # pwd_root=pwd_root_encrypt, pwd_user=pwd_user_encrypt, status=info)
+                    # else:
+                        # local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+                        # update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
+                        # Host.objects.filter(ip_pub=ip_pub).update(username=username,
+                                                                    # pwd_root=pwd_root_encrypt,
+                                                                    # pwd_user=pwd_user_encrypt,
+                                                                    # status=info,
+                                                                    # update_time=update_time)
                     flag = 1
                     num+=1
-                    print ''
+                pool.close()
+                pool.join()
                 status = 'success'
                 print u'------添加完成------\n'
                 os.remove(filename)
@@ -524,6 +458,16 @@ def template_add(request):
                 status = u'未发现上传的模版文件!'
 
     return HttpResponse(status)
+
+@login_required
+def template_add_percentage(request):
+    percent = {}
+    percent['done'] = num
+    percent['all_host'] = nrows
+    
+    # print percent
+    
+    return JsonResponse(percent, safe=False)    
 
 @login_required
 def manual_add(request):

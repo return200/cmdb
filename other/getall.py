@@ -6,13 +6,13 @@ from app01.models import Asset
 
 import ansible.runner
 
-def do(each, host_list, count):
+def do(each, host_list, debug):
     # time.sleep(2)
     runner = ansible.runner.Runner(
         module_name='setup', pattern=each, forks='1', host_list=host_list
         )
     data = runner.run()
-    print u'      [%03d]收集 %s' % (count, each)
+    print u'      收集 %s' % (each)
     for (host, result) in data['contacted'].items():
         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
@@ -41,14 +41,14 @@ def do(each, host_list, count):
             for partation in device:
                 if data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['removable'] == '0':
                     disk = data['contacted'][host]['ansible_facts']['ansible_devices'][partation]['size']
-            
-            print u"      %s 的主机名：%s，操作系统：%s ，CPU：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-            print u'step：%s 存入资产信息表\n' % host
+            if debug=='enabled':
+                print u"      [DEBUG] %s 的主机名：%s，操作系统：%s ，CPU：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+            print u'      %s 存入资产信息表' % host
             # if not Asset.objects.filter(ip_pub=host):
                 # Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk)
             # else:
                 # Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=str(mem)+' MB', disk=disk, update_time=update_time)
-            return host, hostname, system, cpu, cpu_model, str(mem)+' MB', disk
+            return host, hostname, system, cpu, cpu_model, str(mem)+' MB', disk, update_time
     for (host, result) in data['contacted'].items():
         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
@@ -64,12 +64,14 @@ def do(each, host_list, count):
             mem = 'N/A'
             disk = 'N/A'
 
-            if not Asset.objects.filter(ip_pub=host):
-                Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
-            else:
-                Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-            print u"      %s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-
+            # if not Asset.objects.filter(ip_pub=host):
+                # Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+            # else:
+                # Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+            if debug=='enabled':
+                print u"      [DEBUG] %s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+            return host, hostname, system, cpu, cpu_model, str(mem)+' MB', disk, update_time
+            
     for (host, result) in data['dark'].items():
         local_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         update_time = datetime.datetime.strptime(local_time, '%Y-%m-%d %H:%M:%S')
@@ -84,19 +86,21 @@ def do(each, host_list, count):
         mem = 'N/A'
         disk = 'N/A'
  
-        if not Asset.objects.filter(ip_pub=host):
-            Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
-        else:
-            Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
-        print u"      %s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
-
-    insert_time = Asset.objects.order_by('-update_time')[:1]
-
-    if insert_time:
-        for update_time in insert_time:
-            update_time = update_time.update_time 
-#            print update_time
-    else:
-        update_time = u'未更新'
+        # if not Asset.objects.filter(ip_pub=host):
+            # Asset.objects.create(ip_pub=host, hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk)
+        # else:
+            # Asset.objects.filter(ip_pub=host).update(hostname=hostname, os=system, cpu=cpu, cpu_model=cpu_model, mem=mem, disk=disk, update_time=update_time)
+        if debug=='enabled':
+            print u"      [DEBUG] %s 的主机名：%s，操作系统：%s，CPU型号：%s，%s核%s线程x%s，内存：%s MB，磁盘：%s" %(host, hostname, system, cpu_model, cpu_core, cpu_thread, cpu_count, mem, disk)
+        return host, hostname, system, cpu, cpu_model, str(mem)+' MB', disk, update_time
         
-    return update_time
+    # insert_time = Asset.objects.order_by('-update_time')[:1]
+
+    # if insert_time:
+        # for update_time in insert_time:
+            # update_time = update_time.update_time 
+# #            print update_time
+    # else:
+        # update_time = u'未更新'
+        
+    # return update_time

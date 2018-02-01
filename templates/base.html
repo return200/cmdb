@@ -175,9 +175,9 @@
         });
     }
 	
-    function getPercentage(){
+    function getAll_percentage(){
         $.ajax({
-            url: "/percentage/",
+            url: "/percentage/asset/",
             type: "post",
             headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
             success:function(percent){
@@ -193,7 +193,7 @@
         $("#success").hide();
         $("#warning").hide();
         $("#info").hide();
-        var percent = setInterval(getPercentage, 1000);
+        var percent = setInterval(getAll_percentage, 1000);
         $.ajax({
             url: "/getall/",
             type: "post",
@@ -210,6 +210,8 @@
                 else{
                     $("#status-warning").text('更新失败');
                     $("#warning").show();
+                    window.clearInterval(percent);
+                    $("#renew").text('批量更新');
                 }
             }
         });
@@ -302,9 +304,25 @@
         document.getElementById('uploadFileName').innerText=$('#templateFile').val();
     })
     
+    function templateAdd_percentage(){
+        $.ajax({
+            url: "/percentage/host/",
+            type: "post",
+            headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
+            success:function(percent){
+                $('button[href="#templateModal"]').text('批量添加中 '+percent['done']+'/'+percent['all_host'])
+                console.log('已添加：', percent['done']);
+                console.log('总共：', percent['all_host']);
+            }
+        });
+    }
+    
     <!-- 上传文件的同时执行ajax开始 -->
     <!-- 思路：前端设置隐藏字段，用来获取上传状态。先执行上传，后台返回上传状态。添加自执行函数，判断当上传状态为success时则执行ajax。 -->
     $('#templateAdd').click(function(){
+        $("#success").hide();
+        $("#info").hide();
+        $("#warning").hide();
         if(document.getElementById('templateFile').value==""){
             alert('请上传模版！');
             return false;
@@ -323,20 +341,25 @@
     $(function(){
         if($("#upload_info").text()!=''){
             if($("#upload_info").text()=='success'){
-                $("#status-info").html('批量添加中，稍后 <strong><a href="/host/">刷新</a></strong> 页面！');
-                $("#info").show();
+                <!-- $("#status-info").html('批量添加中，稍后 <strong><a href="/host/">刷新</a></strong> 页面！'); -->
+                <!-- $("#info").show(); -->
+                var res = setInterval(templateAdd_percentage, 1000)
                 $.ajax({
                     url: "/addhost/template/",
                     type: "post",
                     headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
                     success: function(status){
                         if(status=='success'){
-                            $("#status-success").text('批量添加完成');
+                            $("#status-success").html('添加完成，<strong><a href="/host/">刷新</a></strong> 页面！');
                             $("#success").show();
+                            window.clearInterval(res);
+                            $('button[href="#templateModal"]').text('模版添加');
                         }
                         else{
                             $("#status-warning").text('批量添加失败');
                             $("#warning").show();
+                            window.clearInterval(res);
+                            $('button[href="#templateModal"]').text('模版添加');
                         }
                     }
                 })

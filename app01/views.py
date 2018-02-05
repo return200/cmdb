@@ -19,7 +19,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from pure_pagination import Paginator, EmptyPage, PageNotAnInteger
 from app01.models import Asset, Host
-from other import hosts_ssh, hosts_file, chk_ip, crypt, update_pwd, transfer, getall, templateAdd
+from other import hosts_ssh, hosts_file, chk_ip, crypt, update_pwd, transfer, getall, templateAdd, clear_dumplate
 from other.export import HostResource, AssetResource
 
 import ansible.runner
@@ -39,9 +39,7 @@ try:
         print '!!!!!!!!! DEBUG MODE ON !!!!!!!!!'
         print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     elif debug=='disabled':
-        print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-        print '!!!!!!!! DEBUG MODE OFF !!!!!!!!!'
-        print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        print ''
     else:
         raise Exception('debug 选项错误[ enabled | disabled ]')
 except Exception as e:
@@ -366,10 +364,10 @@ def upload(request):
 
 @login_required
 def template_add(request):
-    flag = 0
+    flag = 1
     count = 5
     global num
-    num = 1
+    num = 0
     filename = sys.path[0]+'/upload/template.xls'
     
     def save(x):
@@ -406,12 +404,17 @@ def template_add(request):
                 pool = Pool(processes=int(max_processes))
                 
                 for i in range(1, nrows):
+                    num+=1
                     pool.apply_async(templateAdd.do, args=(i, filename, debug, host_list, flag), callback=save)
                     # time.sleep(2)
-                    flag = 1
-                    num+=1
+                    # flag = 1
                 pool.close()
                 pool.join()
+                print u'step：清理重复的 inventory 条目'
+                try:
+                    info = clear_dumplate.do(host_list, debug)
+                except Exception as e:
+                    status = e
                 status = 'success'
                 if debug=='enabled':
                     print u'      [DEBUG] 并发执行结束', time.strftime('%H:%M:%S', time.localtime())
@@ -499,7 +502,7 @@ def template_add(request):
 def template_add_percentage(request):
     percent = {}
     percent['done'] = num
-    percent['all_host'] = nrows
+    percent['all_host'] = nrows - 1
     
     # print percent
     

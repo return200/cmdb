@@ -202,10 +202,12 @@
                 console.log(update_time);
                 if(update_time!='未更新'){
                     document.getElementById('update_time').innerText=update_time;
-                    $("#status-success").text('更新完成：'+update_time);
+                    <!-- $("#status-success").text('更新完成：'+update_time); -->
+                    $("#status-success").html('更新完成，稍后 <strong><a href="/">刷新</a></strong> 页面！');
                     $("#success").show();
                     window.clearInterval(percent);
-                    $("#renew").text('批量更新');
+                    window.location.href='/';
+                    <!-- $("#renew").text('批量更新'); -->
                 }
                 else{
                     $("#status-warning").text('更新失败');
@@ -353,7 +355,8 @@
                             $("#status-success").html('添加完成，<strong><a href="/host/">刷新</a></strong> 页面！');
                             $("#success").show();
                             window.clearInterval(res);
-                            $('button[href="#templateModal"]').text('模版添加');
+                            window.location.href='/host/';
+                            <!-- $("#renew").text('模版添加'); -->
                         }
                         else{
                             $("#status-warning").text('批量添加失败');

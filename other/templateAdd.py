@@ -6,7 +6,7 @@ from other import crypt, hosts_ssh
 
 def do(i, filename, debug, host_list, flag):
     if debug=='enabled':
-        print u'      [DEBUG] 添加 %s，上传文件名：%s，debug：%s，inventory文件：%s，flag：%s' % (i, filename, debug, host_list, flag)
+        print u'      [DEBUG] 添加第 %s 个主机，上传文件名：%s，debug：%s，inventory文件：%s，flag：%s' % (i, filename, debug, host_list, flag)
     # return num, debug, host_list, flag
     data = xlrd.open_workbook(filename)
     table = data.sheets()[0]

@@ -29,3 +29,4 @@ def do(i, filename, debug, host_list, flag):
         print '添加结果：\033[31m%s\033[0m' % (info)
         
     return ip_pub, ip_prv, username, pwd_root_encrypt, pwd_user_encrypt, status
+    

@@ -64,6 +64,13 @@
         <td>{{ each.ip_prv }}</td>
         <td>{{ each.username }}</td>
         <td>{{ each.status }}</td>
+        <!-- {% if each.status == '在线' %} -->
+            <!-- <td>{{ each.status }}</td> -->
+        <!-- {% elif each.status == '添加成功' %} -->
+            <!-- <td>{{ each.status }}</td> -->
+        <!-- {% else %} -->
+            <!-- <td style="color:red">{{ each.status }}</td> -->
+        <!-- {% endif %} -->
         <td>{{ each.update_time|date:"Y-m-d H:i:s" }}</td>
         <td>
             <button class="btn btn-default chk">检测</button>

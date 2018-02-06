@@ -1,5 +1,7 @@
 # _*_ coding: utf-8 _*_
 
+# 清除 inventory 文件中重复的条目
+
 import subprocess
 
 def do(filename, debug):

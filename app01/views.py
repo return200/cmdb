@@ -628,9 +628,11 @@ def check_host(request):
         if len(data['contacted'].items())==0 and len(data['dark'].items())==0:
             status = u'failed: '+u'检查 inventory 中是否包含 %s' % ip_pub
         if status=='success':
-            print u'检测结果：\033[32m%s\033[0m\n' % (u'成功')
+            print u'检测结果：\033[32m%s\033[0m\n' % (u'主机在线')
+            Host.objects.filter(ip_pub=ip_pub).update(status=u'在线')
         else:
             print u'检测结果：\033[31m失败，%s\033[0m\n' % (status)
+            Host.objects.filter(ip_pub=ip_pub).update(status=u'离线')
 
     return HttpResponse(status)
 

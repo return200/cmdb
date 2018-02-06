@@ -230,15 +230,15 @@
             type: "post",
             data: {"ip_pub":ip_pub},
             headers:{ "X-CSRFtoken":$.cookie("csrftoken")},
-            success:function(update_time){
-                console.log(update_time);
-                if(update_time!='未更新'){
-                    document.getElementById('update_time').innerText=update_time;
+            success:function(status){
+                console.log(status);
+                if(status=='success'){
+                    <!-- document.getElementById('update_time').innerText=update_time; -->
                     $("#status-success").text('['+ip_pub+'] 更新完成');
                     $("#success").show();
                 }
                 else{
-                    $("#status-warning").text('['+ip_pub+'] 更新失败');
+                    $("#status-warning").text('['+ip_pub+'] 更新失败：'+status);
                     $("#warning").show();                    
                 }
             }
@@ -377,7 +377,11 @@
     <!-- 上传文件的同时执行ajax结束 -->
     
     $(".chk").click(function(e){
+        $("#success").hide();
+        $("#info").hide();
+        $("#warning").hide();
         var ip_pub=$(this).parent().prev().prev().prev().prev().prev().text();
+        var host_status=$(this).parent().prev().prev();
         console.log(ip_pub);
         $.ajax({
             url: "/chkhost/",
@@ -389,11 +393,13 @@
                     console.log(status);
                     $("#status-success").text('['+ip_pub+'] 检测完成：'+status);
                     $("#success").css('display', 'block');
+                    host_status.text('在线');
                 }
                 else{
                     console.log(status);
                     $("#status-warning").text('['+ip_pub+'] 检测完成：'+status);
                     $("#warning").css('display', 'block');
+                    host_status.text('离线');
                 }
             },
         });

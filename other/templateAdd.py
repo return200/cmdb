@@ -22,8 +22,10 @@ def do(i, filename, debug, host_list, flag):
     info = hosts_ssh.do_ssh(ip_pub, username, password, debug, host_list, flag)
     
     if info==u'成功':
+        status = u'添加成功'
         print '添加结果：\033[32m%s\033[0m' % (info)
     else:
+        status = info
         print '添加结果：\033[31m%s\033[0m' % (info)
         
-    return ip_pub, ip_prv, username, pwd_root_encrypt, pwd_user_encrypt, info
+    return ip_pub, ip_prv, username, pwd_root_encrypt, pwd_user_encrypt, status
